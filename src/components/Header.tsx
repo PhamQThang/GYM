@@ -5,7 +5,7 @@ interface HeaderProps {
   activeTab: string;
 }
 
-export default function Header({ activeTab }: HeaderProps) {
+export default function Header({ activeTab: _activeTab }: HeaderProps) {
   return (
     <header className="h-20 min-h-20 shrink-0 border-b border-[var(--color-border)] px-6 md:px-8 lg:px-10 flex items-center justify-between sticky top-0 bg-[var(--color-app-bg)]/80 backdrop-blur-md z-10">
       <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-widest">

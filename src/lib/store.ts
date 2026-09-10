@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, MealTemplate, Meal, MealItem, WeightLog } from './types';
 import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEAL_TEMPLATES, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
 import { toLocalDateKey } from './analytics';
@@ -255,7 +255,7 @@ export const useAppStore = create<AppState>()(
       })),
 
       completeSet: (setId) => {
-        const { workoutExercises, exercises, getPreviousPerformance, activeSets: currentSets } = get();
+        const { workoutExercises, getPreviousPerformance, activeSets: currentSets } = get();
         const setToComplete = currentSets.find(s => s.id === setId);
         if (!setToComplete) return;
 
@@ -332,7 +332,10 @@ export const useAppStore = create<AppState>()(
 
         if (existingIdx !== -1) {
           // Same-day deduplication: update existing
-          newLogs[existingIdx] = { ...newLogs[existingIdx], weight };
+          const existingLog = newLogs[existingIdx];
+          if (existingLog) {
+            newLogs[existingIdx] = { ...existingLog, weight };
+          }
         } else {
           const newLog: WeightLog = {
             id: crypto.randomUUID(),

@@ -1,6 +1,6 @@
 import { useAppStore } from './store';
 import { AppState } from './store';
-import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutDay, WorkoutExercise, Food, Meal, MealItem, WeightLog } from './types';
+import { WorkoutSet, Exercise, WorkoutDay, WorkoutExercise, Meal, MealItem, WeightLog } from './types';
 
 // Constants
 const SCHEMA_VERSION = 1;
@@ -9,7 +9,9 @@ const APP_IDENTIFIER = "PULSE";
 export function exportData() {
   const state = useAppStore.getState();
   // Partialize extracts exactly what persist saves
-  const serializedState = useAppStore.persist.getOptions().partialize(state);
+  const options = useAppStore.persist.getOptions();
+  const partialize = options?.partialize;
+  const serializedState = partialize ? partialize(state) : state;
   
   const payload = {
     app: APP_IDENTIFIER,

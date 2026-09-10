@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../lib/store';
-import { Timer, ArrowRight, Play, LayoutDashboard } from 'lucide-react';
+import { Play } from 'lucide-react';
 import ActiveWorkoutHeader from './workout/ActiveWorkoutHeader';
 import ExerciseCard from './workout/ExerciseCard';
 import WorkoutSummary from './workout/WorkoutSummary';

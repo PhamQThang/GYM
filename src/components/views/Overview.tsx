@@ -91,13 +91,13 @@ export default function Overview({ setActiveTab }: OverviewProps) {
 
   // ── Nutrition ────────────────────────────────────
   const nutritionHistory = calculateNutritionHistory(mealItems);
-  const todayMacros = nutritionHistory[nutritionHistory.length - 1];
+  const todayMacros = nutritionHistory[nutritionHistory.length - 1] ?? { pro: 0, carb: 0, fat: 0, calories: 0, day: '', dateKey: '', active: false };
   const adherence = calculateCalorieAdherence(mealItems, user);
 
   // ── Weight ───────────────────────────────────────
   const currentWeight = user.current_weight;
   const targetWeight = user.target_weight;
-  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : null;
+  const startingWeight = weightLogs[0]?.weight ?? null;
   const weeklyDelta = calculateWeeklyWeightDelta(weightLogs);
 
   // Dual-directional weight progress (Bulk vs Cut)

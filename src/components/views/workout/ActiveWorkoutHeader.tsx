@@ -1,5 +1,4 @@
 import { Timer, Volume2, Check } from 'lucide-react';
-import { useAppStore } from '../../../lib/store';
 import { useRestTimer } from '../../../lib/useRestTimer';
 import { WorkoutDay } from '../../../lib/types';
 

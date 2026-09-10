@@ -1,5 +1,5 @@
-import { Download, Plus, Flame, Dumbbell, Activity, CheckCircle2, ChevronRight, History, Trophy } from 'lucide-react';
-import { Card, CardHeader, CardTitle } from '../ui/Card';
+import { Download, Plus, Flame, Dumbbell, Activity, CheckCircle2, History, Trophy } from 'lucide-react';
+import { Card, CardHeader } from '../ui/Card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useAppStore } from '../../lib/store';
 import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate, calculateNutritionHistory } from '../../lib/analytics';
@@ -10,7 +10,7 @@ export default function Progress() {
   const { user, weightLogs, mealItems, logWeight, workoutHistory, setHistory, workoutExercises, exercises } = useAppStore();
 
   const weightDelta = user.target_weight - user.current_weight;
-  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : null;
+  const startingWeight = weightLogs[0]?.weight ?? null;
   const weightChange = startingWeight !== null ? user.current_weight - startingWeight : 0;
   const weightChangePercent = startingWeight ? (weightChange / startingWeight) * 100 : 0;
 
@@ -22,7 +22,6 @@ export default function Progress() {
 
   // ── 7-Day Nutrition History ──
   const nutritionHistory = calculateNutritionHistory(mealItems);
-  const todayMacros = nutritionHistory[nutritionHistory.length - 1];
 
   const handleLogWeight = () => {
     const val = window.prompt('Nhập cân nặng mới (kg):', user.current_weight.toString());

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Flame, Target, Zap, Droplets, Check, Edit2, Trash2, Clock, Sun, Moon } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Flame, Target, Zap, Droplets, Check, Trash2, Sun, Moon } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
 import { useAppStore } from '../../lib/store';
 import { toLocalDateKey, formatVietnamShortDate } from '../../lib/analytics';
@@ -57,12 +57,6 @@ export default function Nutrition() {
     if (name.toLowerCase().includes('tối')) return Moon;
     if (name.toLowerCase().includes('trước')) return Zap;
     return Sun;
-  };
-
-  const getMealColor = (status: string) => {
-    if (status === 'CONSUMED' || status === 'COMPLETED') return 'var(--color-primary)';
-    if (status === 'PLANNED') return 'var(--color-text-muted)';
-    return 'var(--color-border)';
   };
 
   return (
@@ -217,7 +211,7 @@ export default function Nutrition() {
          </div>
          <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
             {foods.map(food => (
-              <button key={food.id} onClick={() => logMealItem(activeMealId, food)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
+              <button key={food.id} onClick={() => activeMealId && logMealItem(activeMealId, food)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
                  <div className="w-6 h-6 rounded-full bg-[var(--color-app-bg)] flex items-center justify-center group-hover:bg-[var(--color-primary)] group-hover:text-black transition-colors">
                    <Plus className="w-3 h-3" />
                  </div>

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from '../../../lib/store';
-import { Plus, Settings2, Trash2, ChevronDown, ChevronUp, GripVertical, Check, FolderPlus, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Settings2, Trash2, ChevronDown, ChevronUp, Check, FolderPlus, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card } from '../../ui/Card';
-import { WorkoutExercise } from '../../../lib/types';
 
 export default function ProgramEditor() {
   const { programs, workoutDays, workoutExercises, exercises, addWorkoutDay, removeExerciseFromDay, updateWorkoutExercise, reorderExercises } = useAppStore();
@@ -72,14 +71,20 @@ export default function ProgramEditor() {
                          const moveUp = () => {
                            if (index === 0) return;
                            const arr = [...dayExercises];
-                           [arr[index-1], arr[index]] = [arr[index], arr[index-1]];
+                           const t1 = arr[index-1];
+                           const t2 = arr[index];
+                           if (!t1 || !t2) return;
+                           [arr[index-1], arr[index]] = [t2, t1];
                            reorderExercises(day.id, arr.map(a => a.id));
                          };
 
                          const moveDown = () => {
                            if (index === dayExercises.length - 1) return;
                            const arr = [...dayExercises];
-                           [arr[index+1], arr[index]] = [arr[index], arr[index+1]];
+                           const t1 = arr[index+1];
+                           const t2 = arr[index];
+                           if (!t1 || !t2) return;
+                           [arr[index+1], arr[index]] = [t2, t1];
                            reorderExercises(day.id, arr.map(a => a.id));
                          };
 

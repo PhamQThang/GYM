@@ -1,4 +1,4 @@
-import { CheckCircle2, TrendingUp, Dumbbell, Play, History, ArrowRight } from 'lucide-react';
+import { CheckCircle2, TrendingUp, Dumbbell, History, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
 
 interface WorkoutSummaryProps {

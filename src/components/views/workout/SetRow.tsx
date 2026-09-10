@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, Copy, Trash2, History, Plus } from 'lucide-react';
+import { Check, Copy, Trash2, History } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
 import { WorkoutSet, Exercise } from '../../../lib/types';
 

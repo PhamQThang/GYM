@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../../lib/store';
-import { Search, Plus, Dumbbell, Trash2, Edit2, Info } from 'lucide-react';
+import { Search, Plus, Dumbbell, Trash2 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Exercise } from '../../../lib/types';
 

@@ -162,7 +162,8 @@ export function calculateWeeklyVolume(
 
   return recentKeys.map((weekKey, idx) => {
     const data = weekMap.get(weekKey)!;
-    const prevVol = idx > 0 ? weekMap.get(recentKeys[idx - 1])?.volume ?? 0 : 0;
+    const prevKey = recentKeys[idx - 1];
+    const prevVol = (idx > 0 && prevKey) ? (weekMap.get(prevKey)?.volume ?? 0) : 0;
     const changeNum = idx > 0 && prevVol > 0 ? ((data.volume - prevVol) / prevVol) * 100 : null;
 
     return {
@@ -286,8 +287,10 @@ export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
   // 1. Parse dates using real data model formats
   const parsedLogs = logs.map(log => {
       let d: Date;
-      const viMatch = log.date.match(/^(\d{1,2})\s+Th(\d{1,2})$/i);
-      if (viMatch) {
+      const dateStr = log.date;
+      if (!dateStr) return { log, time: NaN, dateKey: '' };
+      const viMatch = dateStr.match(/^(\d{1,2})\s+Th(\d{1,2})$/i);
+      if (viMatch && viMatch[1] && viMatch[2]) {
         d = new Date(new Date().getFullYear(), parseInt(viMatch[2], 10) - 1, parseInt(viMatch[1], 10));
       } else {
         d = new Date(`${log.date} ${new Date().getFullYear()}`);
@@ -300,6 +303,7 @@ export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
   // 2. Determine latest by actual time
   parsedLogs.sort((a, b) => a.time - b.time);
   const latestItem = parsedLogs[parsedLogs.length - 1];
+  if (!latestItem) return null;
 
   // 3. Target local calendar date ~7 days before the latest log
   const latestDateObj = new Date(latestItem.time);
@@ -311,10 +315,12 @@ export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
   let minDiff = Infinity;
 
   for (let i = 0; i < parsedLogs.length - 1; i++) {
-     const diffDays = Math.abs(parsedLogs[i].time - targetTime) / (1000 * 60 * 60 * 24);
+     const item = parsedLogs[i];
+     if (!item) continue;
+     const diffDays = Math.abs(item.time - targetTime) / (1000 * 60 * 60 * 24);
      if (diffDays < minDiff) {
        minDiff = diffDays;
-       bestItem = parsedLogs[i];
+       bestItem = item;
      }
   }
 
@@ -372,7 +378,6 @@ export function calculateNutritionHistory(mealItems: MealItem[]): DailyNutrition
     });
   }
 
-  const todayKey = history[6].dateKey;
 
   // Aggregate items
   for (const item of mealItems) {
@@ -415,7 +420,7 @@ export interface CalorieAdherence {
 
 export function calculateCalorieAdherence(mealItems: MealItem[], user: User): CalorieAdherence {
   const history = calculateNutritionHistory(mealItems);
-  const today = history[history.length - 1];
+  const today = history[history.length - 1] ?? { calories: 0, pro: 0, carb: 0, fat: 0, day: '', dateKey: '', active: false };
   
   const target = Number(user.target_calories);
   if (isNaN(target) || !isFinite(target) || target <= 0) {
