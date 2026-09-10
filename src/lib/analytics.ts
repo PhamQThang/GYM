@@ -7,6 +7,24 @@
 import { WorkoutSession, WorkoutSet, WorkoutExercise, Exercise } from './types';
 
 // ─────────────────────────────────────────────────
+// LOCAL DATE HELPERS
+// ─────────────────────────────────────────────────
+
+/**
+ * Returns a calendar date key using LOCAL time, formatted as YYYY-MM-DD.
+ * Do NOT use toISOString() for calendar-day grouping because it converts to UTC.
+ * In Vietnam (UTC+7), toISOString() can return the previous calendar day for
+ * anything logged before 07:00 local time.
+ */
+export function toLocalDateKey(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// ─────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────
 
@@ -45,9 +63,9 @@ export function calculateWorkoutStreak(history: WorkoutSession[]): number {
   const completed = history.filter(s => s.status === 'COMPLETED' && s.start_time);
   if (completed.length === 0) return 0;
 
-  // Get unique training dates as YYYY-MM-DD strings
+  // Get unique training dates as YYYY-MM-DD strings in LOCAL time
   const trainingDates = new Set(
-    completed.map(s => s.start_time.slice(0, 10))
+    completed.map(s => toLocalDateKey(s.start_time))
   );
 
   const today = new Date();
@@ -57,13 +75,13 @@ export function calculateWorkoutStreak(history: WorkoutSession[]): number {
   let cursor = new Date(today);
 
   // Allow yesterday as starting point if no session today
-  const todayKey = cursor.toISOString().slice(0, 10);
+  const todayKey = toLocalDateKey(cursor);
   if (!trainingDates.has(todayKey)) {
     cursor.setDate(cursor.getDate() - 1);
   }
 
   while (true) {
-    const key = cursor.toISOString().slice(0, 10);
+    const key = toLocalDateKey(cursor);
     if (!trainingDates.has(key)) break;
     streak++;
     cursor.setDate(cursor.getDate() - 1);
@@ -278,7 +296,7 @@ export function calculateNutritionHistory(mealItems: MealItem[]): DailyNutrition
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateKey = d.toISOString().slice(0, 10);
+    const dateKey = toLocalDateKey(d);
     history.push({
       day: i === 0 ? 'Hôm Nay' : d.getDate().toString().padStart(2, '0'), // Simple day label for chart
       dateKey,
@@ -298,7 +316,7 @@ export function calculateNutritionHistory(mealItems: MealItem[]): DailyNutrition
     if (!item.logged_at) continue;
 
     const itemDate = new Date(item.logged_at);
-    const itemDateKey = itemDate.toISOString().slice(0, 10);
+    const itemDateKey = toLocalDateKey(itemDate);
 
     // Find the matching day bin
     const targetBin = history.find(h => h.dateKey === itemDateKey);
