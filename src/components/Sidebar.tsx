@@ -1,5 +1,6 @@
-import { LayoutDashboard, Dumbbell, Utensils, TrendingUp, Settings, Flame, Timer, History } from 'lucide-react';
+import { Flame, Timer, Dumbbell } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { navItems } from '../lib/nav';
 import { useAppStore } from '../lib/store';
 import { useRestTimer } from '../lib/useRestTimer';
 import { calculateWorkoutStreak } from '../lib/analytics';
@@ -16,14 +17,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const m = Math.floor(remaining / 60).toString().padStart(2, '0');
   const s = (remaining % 60).toString().padStart(2, '0');
   const streak = calculateWorkoutStreak(workoutHistory);
-  const navItems = [
-    { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
-    { id: 'workout', label: 'Tập Luyện', icon: Dumbbell },
-    { id: 'nutrition', label: 'Dinh Dưỡng', icon: Utensils },
-    { id: 'progress', label: 'Tiến Độ', icon: TrendingUp },
-    { id: 'history', label: 'Lịch Sử', icon: History },
-    { id: 'settings', label: 'Cài Đặt', icon: Settings },
-  ];
 
   return (
     <aside className="w-[280px] min-w-[280px] bg-[var(--color-panel-bg)] border-r border-[var(--color-border)] flex flex-col h-full shrink-0 z-20 hidden lg:flex">

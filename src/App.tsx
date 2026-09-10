@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import Overview from './components/views/Overview';
 import Workout from './components/views/Workout';
@@ -30,6 +31,9 @@ export default function App() {
             {activeTab === 'settings' && <Settings />}
           </div>
         </main>
+        
+        {/* Mobile Navigation */}
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
     </div>
   );
