@@ -6,12 +6,16 @@ export type MealStatus = 'PLANNED' | 'CONSUMED' | 'MISSED';
 export interface User {
   id: string;
   name: string;
+  height?: number; // In cm
   current_weight: number;
   target_weight: number;
+  goal_type?: GoalType;
   target_calories: number;
   target_protein: number;
   target_carbs: number;
   target_fat: number;
+  weight_unit?: 'kg' | 'lbs';
+  energy_unit?: 'kcal' | 'kJ';
 }
 
 export interface Goal {

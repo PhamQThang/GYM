@@ -6,15 +6,19 @@ import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES
 const MOCK_USER: User = {
   id: 'u-1',
   name: 'Quang Nguyen',
+  height: 175,
   current_weight: 65.0,
   target_weight: 70.0,
+  goal_type: 'Maintenance',
   target_calories: 3000,
   target_protein: 200,
   target_carbs: 350,
   target_fat: 85,
+  weight_unit: 'kg',
+  energy_unit: 'kcal'
 };
 
-interface AppState {
+export interface AppState {
   // Config & Domain Data
   user: User;
   exercises: Exercise[];
@@ -81,6 +85,11 @@ interface AppState {
   removeExerciseFromDay: (workoutExerciseId: string) => void;
   updateWorkoutExercise: (workoutExerciseId: string, updates: Partial<WorkoutExercise>) => void;
   reorderExercises: (dayId: string, orderedWorkoutExerciseIds: string[]) => void;
+  
+  // Phase 9 Settings & Data Management
+  updateUser: (updates: Partial<User>) => void;
+  importState: (candidateState: Partial<AppState>) => void;
+  resetApp: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -384,10 +393,45 @@ export const useAppStore = create<AppState>()(
           return newIndex !== -1 ? { ...we, order_index: newIndex } : we;
         });
         return { workoutExercises: updated };
-      })
+      }),
+      
+      // Phase 9 Actions
+      updateUser: (updates) => set((state) => ({ user: { ...state.user, ...updates } })),
+      importState: (candidateState) => set((state) => {
+        // Assume candidateState has been fully validated before this is called
+        return { ...state, ...candidateState };
+      }),
+      resetApp: () => set(() => ({
+        user: MOCK_USER,
+        exercises: SEED_EXERCISES,
+        programs: [SEED_PROGRAM],
+        workoutDays: SEED_WORKOUT_DAYS,
+        workoutExercises: SEED_WORKOUT_EXERCISES,
+        foods: SEED_FOODS,
+        meals: SEED_MEALS,
+        mealItems: SEED_MEAL_ITEMS,
+        weightLogs: SEED_WEIGHT_LOGS,
+        dailyWater: 3200,
+        workoutHistory: [],
+        setHistory: [],
+        restTimerActive: false,
+        restTimerElapsed: 0
+      }))
     }),
     {
       name: 'pulse-kinetic-storage',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          if (persistedState.user) {
+            persistedState.user.height = persistedState.user.height || 175;
+            persistedState.user.goal_type = persistedState.user.goal_type || 'Maintenance';
+            persistedState.user.weight_unit = persistedState.user.weight_unit || 'kg';
+            persistedState.user.energy_unit = persistedState.user.energy_unit || 'kcal';
+          }
+        }
+        return persistedState;
+      },
       partialize: (state) => ({
         user: state.user,
         exercises: state.exercises,

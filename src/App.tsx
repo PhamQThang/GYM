@@ -6,6 +6,7 @@ import Workout from './components/views/Workout';
 import Nutrition from './components/views/Nutrition';
 import Progress from './components/views/Progress';
 import WorkoutHistory from './components/views/WorkoutHistory';
+import Settings from './components/views/Settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'workout' | 'nutrition' | 'progress' | 'history' | 'settings'>('overview');
@@ -26,7 +27,7 @@ export default function App() {
             {activeTab === 'nutrition' && <Nutrition />}
             {activeTab === 'progress' && <Progress />}
             {activeTab === 'history' && <WorkoutHistory />}
-            {activeTab === 'settings' && <div className="text-xl">Settings (Not Implemented)</div>}
+            {activeTab === 'settings' && <Settings />}
           </div>
         </main>
       </div>
