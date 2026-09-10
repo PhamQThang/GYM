@@ -383,20 +383,33 @@ export const useAppStore = create<AppState>()(
       })),
       
       addExerciseToDay: (dayId, details) => set((state) => {
-        const existingForDay = state.workoutExercises.filter(we => we.workout_day_id === dayId);
+        const activeForDay = state.workoutExercises
+          .filter(we => we.workout_day_id === dayId && we.is_active !== false)
+          .sort((a, b) => a.order_index - b.order_index);
+        const activeIdsToNewIndex = new Map(activeForDay.map((we, idx) => [we.id, idx]));
+
+        const newExercise = {
+          id: 'we-' + Date.now(),
+          workout_day_id: dayId,
+          exercise_id: details.exercise_id,
+          order_index: activeForDay.length,
+          planned_sets: details.planned_sets || 3,
+          rep_range_min: details.rep_range_min || 8,
+          rep_range_max: details.rep_range_max || 12,
+          rest_seconds: details.rest_seconds || 90,
+          notes: details.notes || '',
+          is_active: true,
+        };
+
+        const updatedExercises = state.workoutExercises.map(we => {
+          if (we.workout_day_id === dayId && we.is_active !== false) {
+            return { ...we, order_index: activeIdsToNewIndex.get(we.id)! };
+          }
+          return we;
+        });
+
         return {
-          workoutExercises: [...state.workoutExercises, {
-            id: 'we-' + Date.now(),
-            workout_day_id: dayId,
-            exercise_id: details.exercise_id,
-            order_index: existingForDay.length,
-            planned_sets: details.planned_sets || 3,
-            rep_range_min: details.rep_range_min || 8,
-            rep_range_max: details.rep_range_max || 12,
-            rest_seconds: details.rest_seconds || 90,
-            notes: details.notes || '',
-            is_active: true,
-          }]
+          workoutExercises: [...updatedExercises, newExercise]
         };
       }),
       

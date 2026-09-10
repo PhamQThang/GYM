@@ -17,6 +17,7 @@ export const SEED_EXERCISES: Exercise[] = [
   { id: 'ex-rdl', name: 'Romanian Deadlift (RDL)', primary_muscle: 'Đùi Sau', secondary_muscles: ['Mông', 'Lưng Dưới'], type: 'Barbell' },
   { id: 'ex-ohp', name: 'Đẩy Tạ Đơn Qua Đầu', primary_muscle: 'Vai Trước', secondary_muscles: ['Tay Sau'], type: 'Dumbbell' },
   { id: 'ex-lat-raise', name: 'Kéo Cáp Dang Vai', primary_muscle: 'Vai Giữa', secondary_muscles: [], type: 'Cable' },
+  { id: 'ex-calf-raise', name: 'Nhón Gót (Calf Raise)', primary_muscle: 'Bắp Chân', secondary_muscles: [], type: 'Machine' },
 ];
 
 // ==========================================
@@ -39,12 +40,39 @@ export const SEED_WORKOUT_DAYS: WorkoutDay[] = [
 
 export const SEED_WORKOUT_EXERCISES: WorkoutExercise[] = [
   // Push Day
-  { id: 'we-p1', workout_day_id: 'day-push', exercise_id: 'ex-incline-smith', order_index: 1, planned_sets: 4, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '' },
-  { id: 'we-p2', workout_day_id: 'day-push', exercise_id: 'ex-lat-pulldown', order_index: 2, planned_sets: 4, rep_range_min: 10, rep_range_max: 12, rest_seconds: 90, notes: '' },
-  { id: 'we-p3', workout_day_id: 'day-push', exercise_id: 'ex-pec-deck', order_index: 3, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '' },
-  { id: 'we-p4', workout_day_id: 'day-push', exercise_id: 'ex-cable-curl', order_index: 4, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 60, notes: '' },
-  { id: 'we-p5', workout_day_id: 'day-push', exercise_id: 'ex-tri-ext', order_index: 5, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '' },
-  { id: 'we-p6', workout_day_id: 'day-push', exercise_id: 'ex-cable-row', order_index: 6, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 60, notes: '' },
+  { id: 'we-push-1', workout_day_id: 'day-push', exercise_id: 'ex-incline-smith', order_index: 0, planned_sets: 4, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-push-2', workout_day_id: 'day-push', exercise_id: 'ex-bench', order_index: 1, planned_sets: 3, rep_range_min: 8, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-push-3', workout_day_id: 'day-push', exercise_id: 'ex-pec-deck', order_index: 2, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+  { id: 'we-push-4', workout_day_id: 'day-push', exercise_id: 'ex-ohp', order_index: 3, planned_sets: 3, rep_range_min: 8, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-push-5', workout_day_id: 'day-push', exercise_id: 'ex-lat-raise', order_index: 4, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+  { id: 'we-push-6', workout_day_id: 'day-push', exercise_id: 'ex-tri-ext', order_index: 5, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 60, notes: '', is_active: true },
+
+  // Pull Day
+  { id: 'we-pull-1', workout_day_id: 'day-pull', exercise_id: 'ex-lat-pulldown', order_index: 0, planned_sets: 4, rep_range_min: 10, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-pull-2', workout_day_id: 'day-pull', exercise_id: 'ex-cable-row', order_index: 1, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-pull-3', workout_day_id: 'day-pull', exercise_id: 'ex-cable-curl', order_index: 2, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 60, notes: '', is_active: true },
+
+  // Legs Day
+  { id: 'we-legs-1', workout_day_id: 'day-legs', exercise_id: 'ex-squat', order_index: 0, planned_sets: 4, rep_range_min: 6, rep_range_max: 8, rest_seconds: 120, notes: '', is_active: true },
+  { id: 'we-legs-2', workout_day_id: 'day-legs', exercise_id: 'ex-leg-press', order_index: 1, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-legs-3', workout_day_id: 'day-legs', exercise_id: 'ex-rdl', order_index: 2, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-legs-4', workout_day_id: 'day-legs', exercise_id: 'ex-leg-curl', order_index: 3, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+  { id: 'we-legs-5', workout_day_id: 'day-legs', exercise_id: 'ex-calf-raise', order_index: 4, planned_sets: 4, rep_range_min: 15, rep_range_max: 20, rest_seconds: 60, notes: '', is_active: true },
+
+  // Upper Day
+  { id: 'we-upper-1', workout_day_id: 'day-upper', exercise_id: 'ex-bench', order_index: 0, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-upper-2', workout_day_id: 'day-upper', exercise_id: 'ex-lat-pulldown', order_index: 1, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-upper-3', workout_day_id: 'day-upper', exercise_id: 'ex-ohp', order_index: 2, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-upper-4', workout_day_id: 'day-upper', exercise_id: 'ex-cable-row', order_index: 3, planned_sets: 3, rep_range_min: 10, rep_range_max: 12, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-upper-5', workout_day_id: 'day-upper', exercise_id: 'ex-cable-curl', order_index: 4, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+  { id: 'we-upper-6', workout_day_id: 'day-upper', exercise_id: 'ex-tri-ext', order_index: 5, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+
+  // Lower Day
+  { id: 'we-lower-1', workout_day_id: 'day-lower', exercise_id: 'ex-squat', order_index: 0, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 120, notes: '', is_active: true },
+  { id: 'we-lower-2', workout_day_id: 'day-lower', exercise_id: 'ex-rdl', order_index: 1, planned_sets: 3, rep_range_min: 8, rep_range_max: 10, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-lower-3', workout_day_id: 'day-lower', exercise_id: 'ex-leg-press', order_index: 2, planned_sets: 3, rep_range_min: 10, rep_range_max: 15, rest_seconds: 90, notes: '', is_active: true },
+  { id: 'we-lower-4', workout_day_id: 'day-lower', exercise_id: 'ex-leg-curl', order_index: 3, planned_sets: 3, rep_range_min: 12, rep_range_max: 15, rest_seconds: 60, notes: '', is_active: true },
+  { id: 'we-lower-5', workout_day_id: 'day-lower', exercise_id: 'ex-calf-raise', order_index: 4, planned_sets: 4, rep_range_min: 15, rep_range_max: 20, rest_seconds: 60, notes: '', is_active: true },
 ];
 
 // ==========================================
