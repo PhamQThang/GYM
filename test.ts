@@ -18,7 +18,7 @@ const validPayload = {
   meals: state.meals,
   mealItems: state.mealItems,
   weightLogs: state.weightLogs,
-  dailyWater: state.dailyWater
+  waterLogs: state.waterLogs
 };
 
 const validBackup = JSON.stringify({

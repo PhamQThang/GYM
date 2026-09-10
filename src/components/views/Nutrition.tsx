@@ -1,19 +1,57 @@
+import { useState, useEffect } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Flame, Target, Zap, Droplets, Check, Edit2, Trash2, Clock, Sun, Moon } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
 import { useAppStore } from '../../lib/store';
-import { calculateCalorieAdherence, calculateNutritionHistory } from '../../lib/analytics';
+import { toLocalDateKey, formatVietnamShortDate } from '../../lib/analytics';
 
 export default function Nutrition() {
-  const { user, foods, meals, mealItems, dailyWater, addWater, logMealItem, completeMeal, removeMealItem } = useAppStore();
-  
-  const adherence = calculateCalorieAdherence(mealItems, user);
-  const history = calculateNutritionHistory(mealItems);
-  const todayMacros = history[history.length - 1];
+  const todayKey = toLocalDateKey(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => todayKey);
+  const { user, foods, mealItems, addWater, logMealItem, completeMeal, removeMealItem, getMealsForDate, ensureMealsForDate, getWaterForDate } = useAppStore();
 
+  useEffect(() => {
+    ensureMealsForDate(selectedDate);
+  }, [selectedDate, ensureMealsForDate]);
+  
+  const todayMeals = getMealsForDate(selectedDate);
+  const todayMealIds = new Set(todayMeals.map(m => m.id));
+  const todayItems = mealItems.filter(mi => todayMealIds.has(mi.meal_id) && Boolean(mi.logged_at));
+
+  const mCals = todayItems.reduce((acc, mi) => acc + mi.calories, 0);
+  const mPro = todayItems.reduce((acc, mi) => acc + mi.protein, 0);
+  const mCarb = todayItems.reduce((acc, mi) => acc + mi.carbs, 0);
+  const mFat = todayItems.reduce((acc, mi) => acc + mi.fat, 0);
+
+  const todayMacros = { pro: mPro, carb: mCarb, fat: mFat };
+  const getTarget = Number(user.target_calories) || 0;
+  
+  const adherence = {
+    actual: mCals,
+    target: getTarget,
+    percentage: getTarget > 0 ? Math.min(100, Math.round((mCals / getTarget) * 100)) : 0,
+    remaining: getTarget > 0 ? Math.max(0, getTarget - mCals) : 0
+  };
+
+  const dailyWater = getWaterForDate(selectedDate);
   const percentHydration = Math.min(100, Math.round((dailyWater / 4000) * 100));
   const remainingWater = Math.max(0, 4000 - dailyWater);
 
-  const activeMealId = meals.find(m => m.status === 'PLANNED')?.id || meals[meals.length - 1]?.id;
+  const activeMealId = todayMeals.find(m => m.status === 'PLANNED')?.id || todayMeals[todayMeals.length - 1]?.id;
+
+  const handlePrevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(toLocalDateKey(d));
+  };
+
+  const handleNextDay = () => {
+    if (selectedDate >= todayKey) return;
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(toLocalDateKey(d));
+  };
+
+  const displayDate = selectedDate === todayKey ? 'Hôm Nay' : formatVietnamShortDate(selectedDate);
 
   const getMealIcon = (name: string) => {
     if (name.toLowerCase().includes('tối')) return Moon;
@@ -40,11 +78,11 @@ export default function Nutrition() {
         
         <div className="flex items-center gap-4">
            <div className="flex items-center bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl p-1">
-             <button className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-             <div className="px-4 text-sm font-semibold flex items-center gap-2">
-               <CalendarIcon className="w-4 h-4 text-[var(--color-primary)]" /> Hôm Nay
+             <button onClick={handlePrevDay} className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+             <div className="px-4 text-sm font-semibold flex items-center gap-2 min-w-[120px] justify-center">
+               <CalendarIcon className="w-4 h-4 text-[var(--color-primary)]" /> {displayDate}
              </div>
-             <button className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronRight className="w-4 h-4" /></button>
+             <button onClick={handleNextDay} disabled={selectedDate >= todayKey} className={`p-2 rounded-lg transition-colors ${selectedDate >= todayKey ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-card-bg)]'}`}><ChevronRight className="w-4 h-4" /></button>
            </div>
         </div>
       </div>
@@ -103,9 +141,9 @@ export default function Nutrition() {
            </CardHeader>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
               {[
-                { label: 'ĐẠM', sub: 'TỔNG HỢP CƠ NẠC', percent: Math.round((todayMacros.pro / user.target_protein)*100), curr: todayMacros.pro, tgt: user.target_protein, color: 'var(--color-primary)' },
-                { label: 'TINH BỘT', sub: 'NĂNG LƯỢNG TẬP LUYỆN', percent: Math.round((todayMacros.carb / user.target_carbs)*100), curr: todayMacros.carb, tgt: user.target_carbs, color: '#60a5fa' },
-                { label: 'CHẤT BÉO TỐT', sub: 'CÂN BẰNG NỘI TIẾT TỐ', percent: Math.round((todayMacros.fat / user.target_fat)*100), curr: todayMacros.fat, tgt: user.target_fat, color: '#fb923c' },
+                { label: 'ĐẠM', sub: 'TỔNG HỢP CƠ NẠC', percent: user.target_protein > 0 ? Math.round((todayMacros.pro / user.target_protein)*100) : 0, curr: todayMacros.pro, tgt: user.target_protein, color: 'var(--color-primary)' },
+                { label: 'TINH BỘT', sub: 'NĂNG LƯỢNG TẬP LUYỆN', percent: user.target_carbs > 0 ? Math.round((todayMacros.carb / user.target_carbs)*100) : 0, curr: todayMacros.carb, tgt: user.target_carbs, color: '#60a5fa' },
+                { label: 'CHẤT BÉO TỐT', sub: 'CÂN BẰNG NỘI TIẾT TỐ', percent: user.target_fat > 0 ? Math.round((todayMacros.fat / user.target_fat)*100) : 0, curr: todayMacros.fat, tgt: user.target_fat, color: '#fb923c' },
               ].map(macro => (
                 <div key={macro.label} className="bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
                    <div className="relative w-28 h-28 flex items-center justify-center mb-6">
@@ -197,11 +235,11 @@ export default function Nutrition() {
                <UtensilsIcon className="w-5 h-5 text-[var(--color-primary)]" />
                Lịch Trình Nạp Dinh Dưỡng
             </div>
-            <div className="text-xs text-[var(--color-text-muted)]">{meals.length} Khung Giờ Ăn</div>
+            <div className="text-xs text-[var(--color-text-muted)]">{todayMeals.length} Khung Giờ Ăn</div>
          </div>
 
          <div className="space-y-4">
-            {meals.map((meal, index) => {
+            {todayMeals.map((meal, index) => {
               const items = mealItems.filter(mi => mi.meal_id === meal.id);
               // Only logged (consumed) items contribute to the meal totals
               const loggedItems = items.filter(mi => Boolean(mi.logged_at));

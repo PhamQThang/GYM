@@ -1,4 +1,4 @@
-import { Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, Meal, MealItem, WeightLog } from './types';
+import { Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, MealTemplate, Meal, MealItem, WeightLog } from './types';
 
 // ==========================================
 // SEEDED EXERCISES
@@ -85,13 +85,26 @@ export const SEED_FOODS: Food[] = [
   { id: 'f-4', name: 'Creatine Monohydrate', serving_size: '5g', calories_per_serving: 0, protein_per_serving: 0, carbs_per_serving: 0, fat_per_serving: 0, is_quick_add: true },
 ];
 
-export const SEED_MEALS: Meal[] = [
-  { id: 'm-1', user_id: 'u-1', name: 'Bữa Sáng', scheduled_time: '07:45 Sáng • Đánh thức trao đổi chất', description: 'Đẩy mạnh năng lượng đầu ngày', status: 'CONSUMED' },
-  { id: 'm-2', user_id: 'u-1', name: 'Bữa Trưa', scheduled_time: '12:30 Trưa • Nạp Glycogen Tối Đa', description: 'Nhiên liệu chính trong ngày', status: 'CONSUMED' },
-  { id: 'm-3', user_id: 'u-1', name: 'Trước Tập', scheduled_time: '04:15 Chiều • Chuẩn Bị Anabolic', description: 'Carb tiêu hoá nhanh', status: 'CONSUMED' },
-  { id: 'm-4', user_id: 'u-1', name: 'Bữa Tối', scheduled_time: '08:00 Tối • Phục Hồi Sau Tập', description: 'Đạm và Chất béo tốt', status: 'PLANNED' },
+export const SEED_MEAL_TEMPLATES: MealTemplate[] = [
+  { id: 'mt-1', user_id: 'u-1', name: 'Bữa Sáng', scheduled_time: '07:45 Sáng • Đánh thức trao đổi chất', description: 'Đẩy mạnh năng lượng đầu ngày' },
+  { id: 'mt-2', user_id: 'u-1', name: 'Bữa Trưa', scheduled_time: '12:30 Trưa • Nạp Glycogen Tối Đa', description: 'Nhiên liệu chính trong ngày' },
+  { id: 'mt-3', user_id: 'u-1', name: 'Trước Tập', scheduled_time: '04:15 Chiều • Chuẩn Bị Anabolic', description: 'Carb tiêu hoá nhanh' },
+  { id: 'mt-4', user_id: 'u-1', name: 'Bữa Tối', scheduled_time: '08:00 Tối • Phục Hồi Sau Tập', description: 'Đạm và Chất béo tốt' },
 ];
 
+export const SEED_MEALS: Meal[] = [
+  { id: 'm-1', user_id: 'u-1', date: '', template_id: 'mt-1', name: 'Bữa Sáng', scheduled_time: '07:45 Sáng • Đánh thức trao đổi chất', description: 'Đẩy mạnh năng lượng đầu ngày', status: 'CONSUMED' },
+  { id: 'm-2', user_id: 'u-1', date: '', template_id: 'mt-2', name: 'Bữa Trưa', scheduled_time: '12:30 Trưa • Nạp Glycogen Tối Đa', description: 'Nhiên liệu chính trong ngày', status: 'CONSUMED' },
+  { id: 'm-3', user_id: 'u-1', date: '', template_id: 'mt-3', name: 'Trước Tập', scheduled_time: '04:15 Chiều • Chuẩn Bị Anabolic', description: 'Carb tiêu hoá nhanh', status: 'CONSUMED' },
+  { id: 'm-4', user_id: 'u-1', date: '', template_id: 'mt-4', name: 'Bữa Tối', scheduled_time: '08:00 Tối • Phục Hồi Sau Tập', description: 'Đạm và Chất béo tốt', status: 'PLANNED' },
+];
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const genDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+SEED_MEALS.forEach(m => m.date = genDate());
 
 // Helper: create an ISO timestamp for today at a given local hour and minute.
 // Used only for seed data. Does NOT use toISOString().slice for calendar-day grouping.
@@ -116,6 +129,7 @@ export const SEED_MEAL_ITEMS: MealItem[] = [
   // Dinner — meal m-4 is PLANNED (not yet consumed), no logged_at
   { id: 'mi-9', meal_id: 'm-4', name: '200g Bò Bằm Giảm Mỡ (90/10) & Khoai Lang Đỏ', calories: 600, protein: 42, carbs: 55, fat: 20 },
 ];
+
 
 // ==========================================
 // SEEDED WEIGHT LOGS

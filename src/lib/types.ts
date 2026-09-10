@@ -100,9 +100,19 @@ export interface Food {
   is_quick_add: boolean;
 }
 
+export interface MealTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  scheduled_time: string;
+  description: string;
+}
+
 export interface Meal {
   id: string;
   user_id: string;
+  date: string; // YYYY-MM-DD
+  template_id: string;
   name: string;
   scheduled_time: string;
   description: string;

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, Meal, MealItem, WeightLog } from './types';
-import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
+import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, MealTemplate, Meal, MealItem, WeightLog } from './types';
+import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEAL_TEMPLATES, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
 import { toLocalDateKey } from './analytics';
 
 const MOCK_USER: User = {
@@ -26,37 +26,38 @@ export interface AppState {
   programs: WorkoutProgram[];
   workoutDays: WorkoutDay[];
   workoutExercises: WorkoutExercise[];
-  
+
   // Phase 3 Data
   foods: Food[];
+  mealTemplates: MealTemplate[];
   meals: Meal[];
   mealItems: MealItem[];
   weightLogs: WeightLog[];
-  dailyWater: number;
-  
+  waterLogs: Record<string, number>;
+
   // Historical Data
   workoutHistory: WorkoutSession[];
   setHistory: WorkoutSet[];
-  
+
   // Timer State
   restTimerActive: boolean;
   restTimerSeconds: number;
   restTimerEndsAt: number | null;
-  
+
   // Active Session State
   activeSession: WorkoutSession | null;
   activeSets: WorkoutSet[];
-  
+
   // Timer Actions
   startRestTimer: (seconds: number) => void;
   stopRestTimer: () => void;
   resetRestTimer: () => void;
-  
+
   // Workout Actions
   startWorkout: (workoutDayId: string) => void;
   finishWorkout: () => void;
   loadPlannedSets: (we: WorkoutExercise) => void;
-  
+
   // Set Actions
   addSet: (workoutExerciseId: string) => void;
   removeSet: (setId: string) => void;
@@ -64,30 +65,33 @@ export interface AppState {
   updateSet: (setId: string, weight: number, reps: number) => void;
   completeSet: (setId: string) => void;
   uncompleteSet: (setId: string) => void;
-  
+
   // Phase 3 Actions
   logMealItem: (mealId: string, food: Food) => void;
   removeMealItem: (itemId: string) => void;
   completeMeal: (mealId: string) => void;
   addWater: (ml: number) => void;
   logWeight: (weight: number) => void;
-  
+
   // Utilities
+  getWaterForDate: (dateKey: string) => number;
+  getMealsForDate: (dateKey: string) => Meal[];
+  ensureMealsForDate: (dateKey: string) => void;
   getPreviousPerformance: (exerciseId: string) => WorkoutSet | null;
-  
+
   // Customization Actions (Phase 7)
   addCustomExercise: (exercise: Omit<Exercise, 'id'>) => void;
   updateExercise: (id: string, updates: Partial<Exercise>) => void;
   hideExercise: (id: string) => void;
-  
+
   addWorkoutDay: (name: string, focus: string) => void;
   updateWorkoutDay: (dayId: string, updates: Partial<WorkoutDay>) => void;
-  
+
   addExerciseToDay: (dayId: string, details: Partial<WorkoutExercise> & { exercise_id: string }) => void;
   removeExerciseFromDay: (workoutExerciseId: string) => void;
   updateWorkoutExercise: (workoutExerciseId: string, updates: Partial<WorkoutExercise>) => void;
   reorderExercises: (dayId: string, orderedWorkoutExerciseIds: string[]) => void;
-  
+
   // Phase 9 Settings & Data Management
   updateUser: (updates: Partial<User>) => void;
   importState: (candidateState: Partial<AppState>) => void;
@@ -102,36 +106,37 @@ export const useAppStore = create<AppState>()(
       programs: [SEED_PROGRAM],
       workoutDays: SEED_WORKOUT_DAYS,
       workoutExercises: SEED_WORKOUT_EXERCISES,
-      
+
       foods: SEED_FOODS,
+      mealTemplates: SEED_MEAL_TEMPLATES,
       meals: SEED_MEALS,
       mealItems: SEED_MEAL_ITEMS,
       weightLogs: SEED_WEIGHT_LOGS,
-      dailyWater: 3200,
-      
+      waterLogs: { [toLocalDateKey(new Date())]: 3200 },
+
       workoutHistory: [],
       setHistory: [],
-      
+
       restTimerActive: false,
       restTimerSeconds: 90,
       restTimerEndsAt: null,
-      
+
       activeSession: null,
       activeSets: [],
-      
+
       // Timer
       startRestTimer: (seconds) => set({
         restTimerActive: true,
         restTimerSeconds: seconds,
         restTimerEndsAt: Date.now() + seconds * 1000,
       }),
-      
+
       stopRestTimer: () => set({ restTimerActive: false, restTimerEndsAt: null }),
       resetRestTimer: () => set((state) => {
         if (!state.restTimerActive) return state;
         return { restTimerEndsAt: Date.now() + state.restTimerSeconds * 1000 };
       }),
-      
+
       // Workout
       startWorkout: (workoutDayId) => {
         const sessionId = 'session-' + Date.now();
@@ -147,11 +152,11 @@ export const useAppStore = create<AppState>()(
           activeSets: [],
         });
       },
-      
+
       finishWorkout: () => {
         const { activeSession, activeSets, workoutHistory, setHistory } = get();
         if (!activeSession) return;
-        
+
         const completedSets = activeSets.filter(s => s.status === 'COMPLETED');
         const sessionVolume = completedSets.reduce((acc, curr) => {
           const w = Number(curr.weight);
@@ -161,14 +166,14 @@ export const useAppStore = create<AppState>()(
           }
           return acc;
         }, 0);
-        
+
         const completedSession: WorkoutSession = {
           ...activeSession,
           end_time: new Date().toISOString(),
           status: 'COMPLETED',
           total_volume: Math.round(sessionVolume),
         };
-        
+
         set({
           workoutHistory: [...workoutHistory, completedSession],
           setHistory: [...setHistory, ...completedSets],
@@ -177,13 +182,13 @@ export const useAppStore = create<AppState>()(
           restTimerActive: false
         });
       },
-      
+
       loadPlannedSets: (we) => {
         const { activeSession, activeSets } = get();
         if (!activeSession) return;
-        
+
         if (activeSets.some(s => s.workout_exercise_id === we.id)) return;
-        
+
         const newSets: WorkoutSet[] = Array.from({ length: we.planned_sets }).map((_, idx) => ({
           id: 'set-' + Date.now() + '-' + idx,
           session_id: activeSession.id,
@@ -194,18 +199,18 @@ export const useAppStore = create<AppState>()(
           is_pr: false,
           status: 'PLANNED'
         }));
-        
+
         set({ activeSets: [...activeSets, ...newSets] });
       },
-      
+
       // Set Mutations
       addSet: (workoutExerciseId) => {
         const { activeSession, activeSets } = get();
         if (!activeSession) return;
-        
+
         const existingSets = activeSets.filter(s => s.workout_exercise_id === workoutExerciseId);
         const lastSet = existingSets[existingSets.length - 1];
-        
+
         const newSet: WorkoutSet = {
           id: 'set-' + Date.now(),
           session_id: activeSession.id,
@@ -216,39 +221,39 @@ export const useAppStore = create<AppState>()(
           is_pr: false,
           status: 'PLANNED'
         };
-        
+
         set({ activeSets: [...activeSets, newSet] });
       },
-      
+
       removeSet: (setId) => set((state) => ({
         activeSets: state.activeSets.filter(s => s.id !== setId)
       })),
-      
+
       duplicateSet: (setId) => {
         const { activeSession, activeSets } = get();
         if (!activeSession) return;
-        
+
         const setToDup = activeSets.find(s => s.id === setId);
         if (!setToDup) return;
-        
+
         const existingSets = activeSets.filter(s => s.workout_exercise_id === setToDup.workout_exercise_id);
-        
+
         const newSet: WorkoutSet = {
           ...setToDup,
           id: 'set-' + Date.now(),
           set_number: existingSets.length + 1,
           status: 'PLANNED'
         };
-        
+
         set({ activeSets: [...activeSets, newSet] });
       },
-      
+
       updateSet: (setId, weight, reps) => set((state) => ({
-        activeSets: state.activeSets.map(s => 
+        activeSets: state.activeSets.map(s =>
           s.id === setId ? { ...s, weight, reps } : s
         )
       })),
-      
+
       completeSet: (setId) => {
         const { workoutExercises, exercises, getPreviousPerformance, activeSets: currentSets } = get();
         const setToComplete = currentSets.find(s => s.id === setId);
@@ -267,13 +272,13 @@ export const useAppStore = create<AppState>()(
             s.id === setId ? { ...s, status: 'COMPLETED', is_pr: isPr } : s
           )
         }));
-        
+
         // Start rest timer after state is committed
         if (weConfig) {
           get().startRestTimer(weConfig.rest_seconds);
         }
       },
-      
+
       uncompleteSet: (setId) => {
         set((state) => ({
           activeSets: state.activeSets.map(s =>
@@ -281,7 +286,7 @@ export const useAppStore = create<AppState>()(
           )
         }));
       },
-      
+
       // Nutrition & Progress Mutations
       logMealItem: (mealId, food) => {
         set((state) => ({
@@ -301,7 +306,7 @@ export const useAppStore = create<AppState>()(
           ]
         }));
       },
-      
+
       completeMeal: (mealId) => set((state) => ({
         meals: state.meals.map(m => m.id === mealId ? { ...m, status: 'CONSUMED' } : m)
       })),
@@ -309,11 +314,17 @@ export const useAppStore = create<AppState>()(
       removeMealItem: (itemId) => set((state) => ({
         mealItems: state.mealItems.filter(mealItem => mealItem.id !== itemId)
       })),
-      
-      addWater: (ml) => set((state) => ({
-        dailyWater: state.dailyWater + ml
-      })),
-      
+
+      addWater: (ml) => set((state) => {
+        const todayKey = toLocalDateKey(new Date());
+        return {
+          waterLogs: {
+            ...state.waterLogs,
+            [todayKey]: (state.waterLogs[todayKey] || 0) + ml
+          }
+        };
+      }),
+
       logWeight: (weight) => set((state) => {
         const dateKey = toLocalDateKey(new Date());
         let newLogs = [...state.weightLogs];
@@ -340,8 +351,51 @@ export const useAppStore = create<AppState>()(
           user: { ...state.user, current_weight: weight }
         };
       }),
-      
+
       // Utilities
+      getWaterForDate: (dateKey) => {
+        const { waterLogs } = get();
+        return waterLogs[dateKey] || 0;
+      },
+      
+      getMealsForDate: (dateKey) => {
+        const { meals, mealTemplates } = get();
+        return meals.filter(m => m.date === dateKey).sort((a, b) => {
+           const tA = mealTemplates.findIndex(t => t.id === a.template_id);
+           const tB = mealTemplates.findIndex(t => t.id === b.template_id);
+           return tA - tB;
+        });
+      },
+      
+      ensureMealsForDate: (dateKey) => {
+        const { meals, mealTemplates } = get();
+        
+        const newMeals: Meal[] = [];
+        
+        for (const template of mealTemplates) {
+          const exists = meals.some(
+            m => m.template_id === template.id && m.date === dateKey
+          );
+          
+          if (!exists) {
+            newMeals.push({
+              id: template.id + '-' + dateKey,
+              user_id: template.user_id,
+              date: dateKey,
+              template_id: template.id,
+              name: template.name,
+              scheduled_time: template.scheduled_time,
+              description: template.description,
+              status: 'PLANNED'
+            });
+          }
+        }
+        
+        if (newMeals.length > 0) {
+          set({ meals: [...meals, ...newMeals] });
+        }
+      },
+      
       getPreviousPerformance: (exerciseId) => {
         const { setHistory, workoutExercises } = get();
         const weIds = workoutExercises.filter(we => we.exercise_id === exerciseId).map(we => we.id);
@@ -349,20 +403,20 @@ export const useAppStore = create<AppState>()(
         if (mappedSets.length === 0) return null;
         return mappedSets.reduce((prev, current) => (prev.weight > current.weight) ? prev : current);
       },
-      
+
       // Phase 7: Exercise Library & Program Actions
       addCustomExercise: (exercise) => set((state) => ({
         exercises: [...state.exercises, { ...exercise, id: 'ex-custom-' + Date.now(), is_custom: true, is_active: true }]
       })),
-      
+
       updateExercise: (id, updates) => set((state) => ({
         exercises: state.exercises.map(e => e.id === id ? { ...e, ...updates } : e)
       })),
-      
+
       hideExercise: (id) => set((state) => ({
         exercises: state.exercises.map(e => e.id === id ? { ...e, is_active: false } : e)
       })),
-      
+
       addWorkoutDay: (name, focus) => set((state) => {
         const programId = state.programs[0]?.id || 'p-1';
         return {
@@ -377,11 +431,11 @@ export const useAppStore = create<AppState>()(
           }]
         };
       }),
-      
+
       updateWorkoutDay: (dayId, updates) => set((state) => ({
         workoutDays: state.workoutDays.map(d => d.id === dayId ? { ...d, ...updates } : d)
       })),
-      
+
       addExerciseToDay: (dayId, details) => set((state) => {
         const activeForDay = state.workoutExercises
           .filter(we => we.workout_day_id === dayId && we.is_active !== false)
@@ -412,15 +466,15 @@ export const useAppStore = create<AppState>()(
           workoutExercises: [...updatedExercises, newExercise]
         };
       }),
-      
+
       removeExerciseFromDay: (weId) => set((state) => ({
         workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, is_active: false } : we)
       })),
-      
+
       updateWorkoutExercise: (weId, updates) => set((state) => ({
         workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, ...updates } : we)
       })),
-      
+
       reorderExercises: (dayId, orderedIds) => set((state) => {
         const updated = state.workoutExercises.map(we => {
           if (we.workout_day_id !== dayId) return we;
@@ -429,7 +483,7 @@ export const useAppStore = create<AppState>()(
         });
         return { workoutExercises: updated };
       }),
-      
+
       // Phase 9 Actions
       updateUser: (updates) => set((state) => ({ user: { ...state.user, ...updates } })),
       importState: (candidateState) => set((state) => {
@@ -443,10 +497,11 @@ export const useAppStore = create<AppState>()(
         workoutDays: SEED_WORKOUT_DAYS,
         workoutExercises: SEED_WORKOUT_EXERCISES,
         foods: SEED_FOODS,
+        mealTemplates: SEED_MEAL_TEMPLATES,
         meals: SEED_MEALS,
         mealItems: SEED_MEAL_ITEMS,
         weightLogs: SEED_WEIGHT_LOGS,
-        dailyWater: 3200,
+        waterLogs: { [toLocalDateKey(new Date())]: 3200 },
         workoutHistory: [],
         setHistory: [],
         restTimerActive: false,
@@ -456,7 +511,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'pulse-kinetic-storage',
-      version: 1,
+      version: 3,
       migrate: (persistedState: any, version: number) => {
         if (version === 0) {
           if (persistedState.user) {
@@ -466,7 +521,68 @@ export const useAppStore = create<AppState>()(
             persistedState.user.energy_unit = persistedState.user.energy_unit || 'kcal';
           }
         }
+        if (version < 2) {
+          if (persistedState.meals && Array.isArray(persistedState.meals)) {
+            const legacyDate = toLocalDateKey(new Date());
+            const newTemplates: any[] = [];
+            const newMeals: any[] = [];
+
+            persistedState.meals.forEach((ml: any) => {
+              if (ml.date !== undefined && ml.template_id !== undefined) {
+                newMeals.push(ml);
+                return;
+              }
+              const tId = 'mt-' + ml.id;
+              newTemplates.push({
+                id: tId,
+                user_id: ml.user_id,
+                name: ml.name,
+                scheduled_time: ml.scheduled_time,
+                description: ml.description
+              });
+              newMeals.push({
+                ...ml,
+                date: legacyDate,
+                template_id: tId
+              });
+            });
+
+            persistedState.mealTemplates = [...(persistedState.mealTemplates || []), ...newTemplates];
+            const uniqueTmpl = new Map();
+            persistedState.mealTemplates.forEach((t: any) => uniqueTmpl.set(t.id, t));
+            persistedState.mealTemplates = Array.from(uniqueTmpl.values());
+
+            persistedState.meals = newMeals;
+          }
+        }
+        if (version < 3) {
+          if (persistedState.dailyWater !== undefined) {
+            const legacyDate = toLocalDateKey(new Date());
+            persistedState.waterLogs = {
+              ...(persistedState.waterLogs || {}),
+              [legacyDate]: persistedState.dailyWater
+            };
+            delete persistedState.dailyWater;
+          }
+        }
         return persistedState;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const todayKey = toLocalDateKey(new Date());
+        let updated = false;
+        
+        const nextMeals = state.meals.map(m => {
+          if (m.date < todayKey && m.status === 'PLANNED') {
+            updated = true;
+            return { ...m, status: 'MISSED' as const };
+          }
+          return m;
+        });
+        
+        if (updated) {
+          useAppStore.setState({ meals: nextMeals });
+        }
       },
       partialize: (state) => ({
         user: state.user,
@@ -478,10 +594,11 @@ export const useAppStore = create<AppState>()(
         setHistory: state.setHistory,
         activeSession: state.activeSession,
         activeSets: state.activeSets,
+        mealTemplates: state.mealTemplates,
         meals: state.meals,
         mealItems: state.mealItems,
         weightLogs: state.weightLogs,
-        dailyWater: state.dailyWater,
+        waterLogs: state.waterLogs,
         restTimerActive: state.restTimerActive,
         restTimerSeconds: state.restTimerSeconds,
         restTimerEndsAt: state.restTimerEndsAt
