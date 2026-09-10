@@ -124,6 +124,7 @@ export interface MealItem {
 export interface WeightLog {
   id: string;
   user_id: string;
+  /** ISO local date, format YYYY-MM-DD. */
   date: string;
   weight: number;
 }

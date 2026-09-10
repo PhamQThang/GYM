@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, Meal, MealItem, WeightLog } from './types';
 import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
+import { toLocalDateKey } from './analytics';
 
 const MOCK_USER: User = {
   id: 'u-1',
@@ -305,15 +306,28 @@ export const useAppStore = create<AppState>()(
       })),
       
       logWeight: (weight) => set((state) => {
-        const today = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(new Date());
-        const newLog: WeightLog = {
-          id: 'wl-' + Date.now(),
-          user_id: state.user.id,
-          date: today,
-          weight: weight
-        };
+        const dateKey = toLocalDateKey(new Date());
+        let newLogs = [...state.weightLogs];
+        const existingIdx = newLogs.findIndex(wl => wl.date === dateKey);
+
+        if (existingIdx !== -1) {
+          // Same-day deduplication: update existing
+          newLogs[existingIdx] = { ...newLogs[existingIdx], weight };
+        } else {
+          const newLog: WeightLog = {
+            id: crypto.randomUUID(),
+            user_id: state.user.id,
+            date: dateKey,
+            weight: weight
+          };
+          newLogs.push(newLog);
+        }
+
+        // Always sort ascending by date
+        newLogs.sort((a, b) => a.date.localeCompare(b.date));
+
         return {
-          weightLogs: [...state.weightLogs, newLog],
+          weightLogs: newLogs,
           user: { ...state.user, current_weight: weight }
         };
       }),

@@ -10,9 +10,9 @@ export default function Progress() {
   const { user, weightLogs, mealItems, logWeight, workoutHistory, setHistory, workoutExercises, exercises } = useAppStore();
 
   const weightDelta = user.target_weight - user.current_weight;
-  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : user.current_weight;
-  const weightChange = user.current_weight - startingWeight;
-  const weightChangePercent = startingWeight > 0 ? (weightChange / startingWeight) * 100 : 0;
+  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : null;
+  const weightChange = startingWeight !== null ? user.current_weight - startingWeight : 0;
+  const weightChangePercent = startingWeight ? (weightChange / startingWeight) * 100 : 0;
 
   // ── Weekly Volume (real data from completed sessions + sets) ──
   const weeklyVolumes = calculateWeeklyVolume(workoutHistory, setHistory);
@@ -67,14 +67,18 @@ export default function Progress() {
           </div>
 
           <div className="flex gap-6 lg:gap-12">
-            <div>
-              <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mb-1">CÂN BAN ĐẦU</div>
-              <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white">{startingWeight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
-            </div>
+            {startingWeight !== null && (
+              <div>
+                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mb-1">CÂN BAN ĐẦU</div>
+                <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white">{startingWeight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
+              </div>
+            )}
             <div>
               <div className="text-[10px] text-[var(--color-primary)] uppercase tracking-widest font-semibold mb-1">HIỆN TẠI</div>
               <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-[var(--color-primary)]">{user.current_weight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
-              <div className="text-[10px] text-[var(--color-text-muted)]">{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} kg ({weightChange > 0 ? '+' : ''}{weightChangePercent.toFixed(1)}%)</div>
+              {startingWeight !== null && (
+                <div className="text-[10px] text-[var(--color-text-muted)]">{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} kg ({weightChange > 0 ? '+' : ''}{weightChangePercent.toFixed(1)}%)</div>
+              )}
             </div>
             <div>
               <div className="text-[10px] text-blue-400 uppercase tracking-widest font-semibold mb-1">MỤC TIÊU</div>
@@ -93,7 +97,7 @@ export default function Progress() {
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightLogs} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} dy={10} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={formatVietnamShortDate} tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} dy={10} />
                 <YAxis domain={['auto', 'auto']} hide={true} />
                 <Tooltip contentStyle={{ backgroundColor: 'var(--color-card-bg)', borderColor: 'var(--color-border)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: 'var(--color-primary)' }} />
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />

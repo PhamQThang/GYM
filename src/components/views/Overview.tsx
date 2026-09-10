@@ -97,15 +97,17 @@ export default function Overview({ setActiveTab }: OverviewProps) {
   // ── Weight ───────────────────────────────────────
   const currentWeight = user.current_weight;
   const targetWeight = user.target_weight;
-  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : currentWeight;
+  const startingWeight = weightLogs.length > 0 ? weightLogs[0].weight : null;
   const weeklyDelta = calculateWeeklyWeightDelta(weightLogs);
 
   // Dual-directional weight progress (Bulk vs Cut)
   let weightProgressPct = 0;
-  if (targetWeight > startingWeight) {
-    weightProgressPct = ((currentWeight - startingWeight) / (targetWeight - startingWeight)) * 100;
-  } else if (targetWeight < startingWeight) {
-    weightProgressPct = ((startingWeight - currentWeight) / (startingWeight - targetWeight)) * 100;
+  if (startingWeight !== null) {
+    if (targetWeight > startingWeight) {
+      weightProgressPct = ((currentWeight - startingWeight) / (targetWeight - startingWeight)) * 100;
+    } else if (targetWeight < startingWeight) {
+      weightProgressPct = ((startingWeight - currentWeight) / (startingWeight - targetWeight)) * 100;
+    }
   }
   if (!isFinite(weightProgressPct) || isNaN(weightProgressPct)) weightProgressPct = 0;
   weightProgressPct = Math.max(0, Math.min(100, Math.round(weightProgressPct)));
@@ -266,7 +268,7 @@ export default function Overview({ setActiveTab }: OverviewProps) {
                 <div className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-700" style={{ width: `${weightProgressPct}%` }}></div>
               </div>
               <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
-                <span>Bắt Đầu: {startingWeight.toFixed(1)} kg</span>
+                {startingWeight !== null && <span>Bắt Đầu: {startingWeight.toFixed(1)} kg</span>}
                 <span>Mục Tiêu: {targetWeight.toFixed(1)} kg</span>
               </div>
             </div>

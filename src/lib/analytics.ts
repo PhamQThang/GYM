@@ -237,13 +237,16 @@ export function calculatePersonalRecords(
 
 /** Formats an ISO date string into Vietnamese short date: "28 Th10 2026" */
 export function formatVietnamDate(isoString: string): string {
+  if (!isoString) return '';
   const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
   return d.toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 /** Formats an ISO date string into short Vietnamese: "28 Th10" */
 export function formatVietnamShortDate(isoString: string): string {
   const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
   const day = d.getDate().toString().padStart(2, '0');
   const month = d.getMonth() + 1;
   return `${day} Th${month}`;

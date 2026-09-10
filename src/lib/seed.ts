@@ -93,10 +93,10 @@ export const SEED_MEAL_ITEMS: MealItem[] = [
 // SEEDED WEIGHT LOGS
 // ==========================================
 export const SEED_WEIGHT_LOGS: WeightLog[] = [
-  { id: 'wl-1', user_id: 'u-1', date: '01 Th9', weight: 60.0 },
-  { id: 'wl-2', user_id: 'u-1', date: '15 Th9', weight: 61.5 },
-  { id: 'wl-3', user_id: 'u-1', date: '30 Th9', weight: 62.0 },
-  { id: 'wl-4', user_id: 'u-1', date: '14 Th10', weight: 63.2 },
-  { id: 'wl-5', user_id: 'u-1', date: '21 Th10', weight: 64.1 },
-  { id: 'wl-6', user_id: 'u-1', date: '28 Th10', weight: 65.0 },
+  { id: 'wl-1', user_id: 'u-1', date: '2026-09-01', weight: 60.0 },
+  { id: 'wl-2', user_id: 'u-1', date: '2026-09-15', weight: 61.5 },
+  { id: 'wl-3', user_id: 'u-1', date: '2026-09-30', weight: 62.0 },
+  { id: 'wl-4', user_id: 'u-1', date: '2026-10-14', weight: 63.2 },
+  { id: 'wl-5', user_id: 'u-1', date: '2026-10-21', weight: 64.1 },
+  { id: 'wl-6', user_id: 'u-1', date: '2026-10-28', weight: 65.0 },
 ];
