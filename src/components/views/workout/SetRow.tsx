@@ -10,17 +10,28 @@ interface SetRowProps {
 }
 
 export default function SetRow({ workoutSet, exercise }: SetRowProps) {
-  const { updateSet, completeSet, removeSet, duplicateSet, getPreviousPerformance } = useAppStore();
+  const { updateSet, completeSet, uncompleteSet, removeSet, duplicateSet, getPreviousPerformance } = useAppStore();
 
   const prevPerf = getPreviousPerformance(exercise.id);
   const isCompleted = workoutSet.status === 'COMPLETED';
 
   // UI Buffers to allow empty string edits without pushing NaN to domain state
-  const [localWeight, setLocalWeight] = React.useState<string | number>(workoutSet.weight || '');
+  const getInitialWeight = () => workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight;
+  
+  const [localWeight, setLocalWeight] = React.useState<string | number>(getInitialWeight());
   const [localReps, setLocalReps] = React.useState<string | number>(workoutSet.reps || '');
 
   React.useEffect(() => {
-    setLocalWeight(workoutSet.weight || '');
+    // Only resync if the user hasn't buffered '0' intentionally for an empty planned set
+    let nextWeight: string | number = workoutSet.weight;
+    if (workoutSet.weight === 0 && workoutSet.status === 'PLANNED') {
+       if (localWeight !== '0' && localWeight !== 0) {
+          nextWeight = '';
+       } else {
+          nextWeight = localWeight;
+       }
+    }
+    setLocalWeight(nextWeight);
     setLocalReps(workoutSet.reps || '');
   }, [workoutSet.weight, workoutSet.reps, workoutSet.status]);
 
@@ -44,7 +55,7 @@ export default function SetRow({ workoutSet, exercise }: SetRowProps) {
 
   const handleBlur = () => {
     // Revert visual to valid committed store state on blur if left empty/invalid
-    setLocalWeight(workoutSet.weight || '');
+    setLocalWeight(workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight);
     setLocalReps(workoutSet.reps || '');
   };
 
@@ -96,13 +107,17 @@ export default function SetRow({ workoutSet, exercise }: SetRowProps) {
       {/* Complete Button */}
       <div className="flex justify-end pr-2 md:pr-0">
         {isCompleted ? (
-           <div className="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] rounded-xl flex items-center justify-center">
-             <Check className="w-5 h-5 md:w-6 md:h-6" />
-           </div>
+           <button 
+             onClick={() => uncompleteSet(workoutSet.id)}
+             title="Bỏ hoàn thành"
+             className="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black rounded-xl flex items-center justify-center transition-colors group"
+           >
+             <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
+           </button>
         ) : (
            <button 
              onClick={() => completeSet(workoutSet.id)}
-             disabled={!workoutSet.weight || !workoutSet.reps}
+             disabled={workoutSet.reps <= 0 || isNaN(workoutSet.reps)}
              className="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-card-bg)] hover:bg-[var(--color-primary)] text-[var(--color-text-muted)] hover:text-black rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group"
            >
              <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />

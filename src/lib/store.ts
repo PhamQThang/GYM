@@ -63,6 +63,7 @@ export interface AppState {
   duplicateSet: (setId: string) => void;
   updateSet: (setId: string, weight: number, reps: number) => void;
   completeSet: (setId: string) => void;
+  uncompleteSet: (setId: string) => void;
   
   // Phase 3 Actions
   logMealItem: (mealId: string, food: Food) => void;
@@ -271,6 +272,14 @@ export const useAppStore = create<AppState>()(
         if (weConfig) {
           get().startRestTimer(weConfig.rest_seconds);
         }
+      },
+      
+      uncompleteSet: (setId) => {
+        set((state) => ({
+          activeSets: state.activeSets.map(s =>
+            s.id === setId ? { ...s, status: 'PLANNED', is_pr: false } : s
+          )
+        }));
       },
       
       // Nutrition & Progress Mutations
