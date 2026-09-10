@@ -64,19 +64,28 @@ export const SEED_MEALS: Meal[] = [
   { id: 'm-4', user_id: 'u-1', name: 'Bữa Tối', scheduled_time: '08:00 Tối • Phục Hồi Sau Tập', description: 'Đạm và Chất béo tốt', status: 'PLANNED' },
 ];
 
+
+// Helper: create an ISO timestamp for today at a given local hour and minute.
+// Used only for seed data. Does NOT use toISOString().slice for calendar-day grouping.
+const todayAt = (h: number, m: number): string => {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+
 export const SEED_MEAL_ITEMS: MealItem[] = [
-  // Breakfast
-  { id: 'mi-1', meal_id: 'm-1', name: '3 Trứng Nguyên Đập + 2 Lòng Trắng', calories: 260, protein: 28, carbs: 2, fat: 15 },
-  { id: 'mi-2', meal_id: 'm-1', name: '80g Yến Mạch Cán Mỏng & Quả Mọng', calories: 300, protein: 10, carbs: 58, fat: 5 },
-  { id: 'mi-3', meal_id: 'm-1', name: 'Cà Phê Đen + 5g Creatine', calories: 60, protein: 10, carbs: 12, fat: 0 },
-  // Lunch
-  { id: 'mi-4', meal_id: 'm-2', name: '220g Ức Gà Nướng Áp Chảo', calories: 360, protein: 52, carbs: 0, fat: 6 },
-  { id: 'mi-5', meal_id: 'm-2', name: '250g Cơm Trắng Dẻo Gạo ST25', calories: 325, protein: 6, carbs: 70, fat: 1 },
-  { id: 'mi-6', meal_id: 'm-2', name: 'Bông Cải Xanh Hấp & Dầu Ô-liu', calories: 55, protein: 0, carbs: 25, fat: 7 },
-  // Pre-workout
-  { id: 'mi-7', meal_id: 'm-3', name: 'Bánh Gạo Trắng Bỏ Lò + Chuối + Mật Ong', calories: 240, protein: 4, carbs: 56, fat: 1 },
-  { id: 'mi-8', meal_id: 'm-3', name: '1 Muỗng Clear Whey Isolate Tinh Khiết', calories: 140, protein: 20, carbs: 6, fat: 3 },
-  // Dinner
+  // Breakfast — meal m-1 is CONSUMED, items get today's logged_at
+  { id: 'mi-1', meal_id: 'm-1', name: '3 Trứng Nguyên Đập + 2 Lòng Trắng', calories: 260, protein: 28, carbs: 2, fat: 15, logged_at: todayAt(7, 45) },
+  { id: 'mi-2', meal_id: 'm-1', name: '80g Yến Mạch Cán Mỏng & Quả Mọng', calories: 300, protein: 10, carbs: 58, fat: 5, logged_at: todayAt(7, 46) },
+  { id: 'mi-3', meal_id: 'm-1', name: 'Cà Phê Đen + 5g Creatine', calories: 60, protein: 10, carbs: 12, fat: 0, logged_at: todayAt(7, 47) },
+  // Lunch — meal m-2 is CONSUMED
+  { id: 'mi-4', meal_id: 'm-2', name: '220g Ức Gà Nướng Áp Chảo', calories: 360, protein: 52, carbs: 0, fat: 6, logged_at: todayAt(12, 30) },
+  { id: 'mi-5', meal_id: 'm-2', name: '250g Cơm Trắng Dẻo Gạo ST25', calories: 325, protein: 6, carbs: 70, fat: 1, logged_at: todayAt(12, 31) },
+  { id: 'mi-6', meal_id: 'm-2', name: 'Bông Cải Xanh Hấp & Dầu Ô-liu', calories: 55, protein: 0, carbs: 25, fat: 7, logged_at: todayAt(12, 32) },
+  // Pre-workout — meal m-3 is CONSUMED
+  { id: 'mi-7', meal_id: 'm-3', name: 'Bánh Gạo Trắng Bỏ Lò + Chuối + Mật Ong', calories: 240, protein: 4, carbs: 56, fat: 1, logged_at: todayAt(16, 15) },
+  { id: 'mi-8', meal_id: 'm-3', name: '1 Muỗng Clear Whey Isolate Tinh Khiết', calories: 140, protein: 20, carbs: 6, fat: 3, logged_at: todayAt(16, 16) },
+  // Dinner — meal m-4 is PLANNED (not yet consumed), no logged_at
   { id: 'mi-9', meal_id: 'm-4', name: '200g Bò Bằm Giảm Mỡ (90/10) & Khoai Lang Đỏ', calories: 600, protein: 42, carbs: 55, fat: 20 },
 ];
 

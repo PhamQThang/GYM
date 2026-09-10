@@ -4,7 +4,7 @@ import { useAppStore } from '../../lib/store';
 import { calculateCalorieAdherence, calculateNutritionHistory } from '../../lib/analytics';
 
 export default function Nutrition() {
-  const { user, foods, meals, mealItems, dailyWater, addWater, logMealItem, completeMeal } = useAppStore();
+  const { user, foods, meals, mealItems, dailyWater, addWater, logMealItem, completeMeal, removeMealItem } = useAppStore();
   
   const adherence = calculateCalorieAdherence(mealItems, user);
   const history = calculateNutritionHistory(mealItems);
@@ -203,10 +203,12 @@ export default function Nutrition() {
          <div className="space-y-4">
             {meals.map((meal, index) => {
               const items = mealItems.filter(mi => mi.meal_id === meal.id);
-              const mCals = items.reduce((a, i) => a + i.calories, 0);
-              const mPro = items.reduce((a, i) => a + i.protein, 0);
-              const mCarb = items.reduce((a, i) => a + i.carbs, 0);
-              const mFat = items.reduce((a, i) => a + i.fat, 0);
+              // Only logged (consumed) items contribute to the meal totals
+              const loggedItems = items.filter(mi => Boolean(mi.logged_at));
+              const mCals = loggedItems.reduce((a, i) => a + i.calories, 0);
+              const mPro = loggedItems.reduce((a, i) => a + i.protein, 0);
+              const mCarb = loggedItems.reduce((a, i) => a + i.carbs, 0);
+              const mFat = loggedItems.reduce((a, i) => a + i.fat, 0);
               const Icon = getMealIcon(meal.name);
               const isActive = meal.id === activeMealId;
 
@@ -274,7 +276,7 @@ export default function Nutrition() {
                                 <td className="py-3 px-6 text-center text-sm font-medium text-orange-400">{item.fat}g</td>
                                 <td className="py-3 px-6 text-right">
                                    <div className="flex items-center justify-end gap-2 text-[var(--color-text-muted)]">
-                                     <button className="p-1.5 hover:text-red-400 transition-colors rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                                     <button onClick={() => removeMealItem(item.id)} className="p-1.5 hover:text-red-400 transition-colors rounded" aria-label="Xoa mon an"><Trash2 className="w-3.5 h-3.5" /></button>
                                    </div>
                                 </td>
                               </tr>

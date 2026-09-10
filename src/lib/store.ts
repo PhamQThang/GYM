@@ -65,6 +65,7 @@ export interface AppState {
   
   // Phase 3 Actions
   logMealItem: (mealId: string, food: Food) => void;
+  removeMealItem: (itemId: string) => void;
   completeMeal: (mealId: string) => void;
   addWater: (ml: number) => void;
   logWeight: (weight: number) => void;
@@ -293,6 +294,10 @@ export const useAppStore = create<AppState>()(
       
       completeMeal: (mealId) => set((state) => ({
         meals: state.meals.map(m => m.id === mealId ? { ...m, status: 'CONSUMED' } : m)
+      })),
+
+      removeMealItem: (itemId) => set((state) => ({
+        mealItems: state.mealItems.filter(mealItem => mealItem.id !== itemId)
       })),
       
       addWater: (ml) => set((state) => ({
