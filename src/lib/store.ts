@@ -357,7 +357,7 @@ export const useAppStore = create<AppState>()(
         const { waterLogs } = get();
         return waterLogs[dateKey] || 0;
       },
-      
+
       getMealsForDate: (dateKey) => {
         const { meals, mealTemplates } = get();
         return meals.filter(m => m.date === dateKey).sort((a, b) => {
@@ -366,17 +366,17 @@ export const useAppStore = create<AppState>()(
            return tA - tB;
         });
       },
-      
+
       ensureMealsForDate: (dateKey) => {
         const { meals, mealTemplates } = get();
-        
+
         const newMeals: Meal[] = [];
-        
+
         for (const template of mealTemplates) {
           const exists = meals.some(
             m => m.template_id === template.id && m.date === dateKey
           );
-          
+
           if (!exists) {
             newMeals.push({
               id: template.id + '-' + dateKey,
@@ -390,12 +390,12 @@ export const useAppStore = create<AppState>()(
             });
           }
         }
-        
+
         if (newMeals.length > 0) {
           set({ meals: [...meals, ...newMeals] });
         }
       },
-      
+
       getPreviousPerformance: (exerciseId) => {
         const { setHistory, workoutExercises } = get();
         const weIds = workoutExercises.filter(we => we.exercise_id === exerciseId).map(we => we.id);
@@ -571,7 +571,7 @@ export const useAppStore = create<AppState>()(
         if (!state) return;
         const todayKey = toLocalDateKey(new Date());
         let updated = false;
-        
+
         const nextMeals = state.meals.map(m => {
           if (m.date < todayKey && m.status === 'PLANNED') {
             updated = true;
@@ -579,7 +579,7 @@ export const useAppStore = create<AppState>()(
           }
           return m;
         });
-        
+
         if (updated) {
           useAppStore.setState({ meals: nextMeals });
         }

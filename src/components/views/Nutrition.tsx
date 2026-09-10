@@ -12,7 +12,7 @@ export default function Nutrition() {
   useEffect(() => {
     ensureMealsForDate(selectedDate);
   }, [selectedDate, ensureMealsForDate]);
-  
+
   const todayMeals = getMealsForDate(selectedDate);
   const todayMealIds = new Set(todayMeals.map(m => m.id));
   const todayItems = mealItems.filter(mi => todayMealIds.has(mi.meal_id) && Boolean(mi.logged_at));
@@ -24,7 +24,7 @@ export default function Nutrition() {
 
   const todayMacros = { pro: mPro, carb: mCarb, fat: mFat };
   const getTarget = Number(user.target_calories) || 0;
-  
+
   const adherence = {
     actual: mCals,
     target: getTarget,
@@ -75,7 +75,7 @@ export default function Nutrition() {
           </div>
           <h2 className="text-3xl font-bold">Quản Lý Dinh Dưỡng & Macro Trong Ngày</h2>
         </div>
-        
+
         <div className="flex items-center gap-4">
            <div className="flex items-center bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl p-1">
              <button onClick={handlePrevDay} className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
@@ -180,7 +180,7 @@ export default function Nutrition() {
                 <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">ĐÃ ĐẠT</div>
              </div>
            </CardHeader>
-           
+
            <div className="flex items-center gap-6 mt-8">
               <div className="flex-1">
                  <div className="flex items-baseline gap-1">
@@ -188,7 +188,7 @@ export default function Nutrition() {
                    <span className="text-sm font-semibold text-[var(--color-text-muted)]">/ 4.0L</span>
                  </div>
                  <p className="text-xs text-[var(--color-text-muted)] mt-1">Còn lại: {remainingWater} ml</p>
-                 
+
                  <div className="mt-6 space-y-2">
                    <div className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">GHI NHANH THỂ TÍCH NƯỚC</div>
                    <div className="flex gap-2">
@@ -197,7 +197,7 @@ export default function Nutrition() {
                    </div>
                  </div>
               </div>
-              
+
               <div className="w-16 h-40 bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-full overflow-hidden relative p-1 shrink-0">
                  <div className="absolute bottom-1 left-1 right-1 bg-blue-500/20 rounded-full flex flex-col justify-end overflow-hidden" style={{ height: 'calc(100% - 8px)' }}>
                     <div className="w-full bg-blue-400 rounded-full transition-all duration-1000 ease-out" style={{ height: `${percentHydration}%` }}></div>
@@ -268,7 +268,7 @@ export default function Nutrition() {
                             <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-1">{meal.scheduled_time}</p>
                          </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-4 md:gap-8 text-sm font-semibold">
                          <>
                            <div><span className="text-white">{mCals}</span> <span className="text-[var(--color-text-muted)] text-[10px]">kcal</span></div>
@@ -279,7 +279,7 @@ export default function Nutrition() {
                            <div>•</div>
                            <div><span className="text-orange-400">{mFat}g</span> <span className="text-[var(--color-text-muted)] text-[10px]">F</span></div>
                          </>
-                         
+
                          {meal.status === 'PLANNED' && (
                            <button onClick={() => completeMeal(meal.id)} className="flex items-center gap-1.5 text-xs bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black py-1.5 px-3 rounded-lg transition-colors border border-[var(--color-primary)]/30 border-dashed">
                              <Check className="w-4 h-4" /> Ăn Xong
