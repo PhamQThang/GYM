@@ -260,6 +260,67 @@ export function formatTodayVietnamese(): string {
   return `${weekday}, ${day} Th${month} ${year}`;
 }
 
+/**
+ * Returns the time-of-day greeting in Vietnamese.
+ */
+export function getVietnameseGreeting(): string {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'Chào buổi sáng';
+  if (h >= 12 && h < 18) return 'Chào buổi chiều';
+  return 'Chào buổi tối';
+}
+
+import { WeightLog } from './types';
+
+/**
+ * Returns the weight delta over the last 7 days from WeightLog data.
+ * Determines the latest log by date, then finds a comparison log ~7 days prior.
+ * Returns null if insufficient data.
+ */
+export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
+  if (logs.length < 2) return null;
+
+  // 1. Parse dates using real data model formats
+  const parsedLogs = logs.map(log => {
+      let d: Date;
+      const viMatch = log.date.match(/^(\d{1,2})\s+Th(\d{1,2})$/i);
+      if (viMatch) {
+        d = new Date(new Date().getFullYear(), parseInt(viMatch[2], 10) - 1, parseInt(viMatch[1], 10));
+      } else {
+        d = new Date(`${log.date} ${new Date().getFullYear()}`);
+      }
+      return { log, time: d.getTime(), dateKey: isNaN(d.getTime()) ? '' : toLocalDateKey(d) };
+  }).filter(item => item.dateKey !== '');
+
+  if (parsedLogs.length < 2) return null;
+
+  // 2. Determine latest by actual time
+  parsedLogs.sort((a, b) => a.time - b.time);
+  const latestItem = parsedLogs[parsedLogs.length - 1];
+
+  // 3. Target local calendar date ~7 days before the latest log
+  const latestDateObj = new Date(latestItem.time);
+  latestDateObj.setDate(latestDateObj.getDate() - 7);
+  const targetTime = latestDateObj.getTime();
+
+  // 4. Find the most appropriate comparison log
+  let bestItem = null;
+  let minDiff = Infinity;
+
+  for (let i = 0; i < parsedLogs.length - 1; i++) {
+     const diffDays = Math.abs(parsedLogs[i].time - targetTime) / (1000 * 60 * 60 * 24);
+     if (diffDays < minDiff) {
+       minDiff = diffDays;
+       bestItem = parsedLogs[i];
+     }
+  }
+
+  // If closest is further than 4 days, it's not meaningful as a "weekly" delta
+  if (!bestItem || minDiff > 4) return null;
+
+  return Math.round((latestItem.log.weight - bestItem.log.weight) * 10) / 10;
+}
+
 /** Duration in minutes between two ISO strings */
 export function durationMinutes(startIso: string, endIso?: string): number {
   if (!endIso) return 0;

@@ -23,7 +23,7 @@ export default function App() {
         
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 lg:p-10 hide-scrollbar pb-24">
           <div className="max-w-[1400px] mx-auto w-full">
-            {activeTab === 'overview' && <Overview />}
+            {activeTab === 'overview' && <Overview setActiveTab={setActiveTab} />}
             {activeTab === 'workout' && <Workout />}
             {activeTab === 'nutrition' && <Nutrition />}
             {activeTab === 'progress' && <Progress />}
