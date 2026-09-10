@@ -40,7 +40,7 @@ export interface AppState {
   // Timer State
   restTimerActive: boolean;
   restTimerSeconds: number;
-  restTimerElapsed: number;
+  restTimerEndsAt: number | null;
   
   // Active Session State
   activeSession: WorkoutSession | null;
@@ -48,7 +48,6 @@ export interface AppState {
   
   // Timer Actions
   startRestTimer: (seconds: number) => void;
-  tickRestTimer: () => void;
   stopRestTimer: () => void;
   resetRestTimer: () => void;
   
@@ -112,7 +111,7 @@ export const useAppStore = create<AppState>()(
       
       restTimerActive: false,
       restTimerSeconds: 90,
-      restTimerElapsed: 0,
+      restTimerEndsAt: null,
       
       activeSession: null,
       activeSets: [],
@@ -121,19 +120,14 @@ export const useAppStore = create<AppState>()(
       startRestTimer: (seconds) => set({
         restTimerActive: true,
         restTimerSeconds: seconds,
-        restTimerElapsed: 0,
+        restTimerEndsAt: Date.now() + seconds * 1000,
       }),
       
-      tickRestTimer: () => set((state) => {
+      stopRestTimer: () => set({ restTimerActive: false, restTimerEndsAt: null }),
+      resetRestTimer: () => set((state) => {
         if (!state.restTimerActive) return state;
-        if (state.restTimerElapsed >= state.restTimerSeconds) {
-          return { restTimerActive: false, restTimerElapsed: state.restTimerSeconds };
-        }
-        return { restTimerElapsed: state.restTimerElapsed + 1 };
+        return { restTimerEndsAt: Date.now() + state.restTimerSeconds * 1000 };
       }),
-      
-      stopRestTimer: () => set({ restTimerActive: false, restTimerElapsed: 0 }),
-      resetRestTimer: () => set({ restTimerElapsed: 0 }),
       
       // Workout
       startWorkout: (workoutDayId) => {
@@ -415,7 +409,8 @@ export const useAppStore = create<AppState>()(
         workoutHistory: [],
         setHistory: [],
         restTimerActive: false,
-        restTimerElapsed: 0
+        restTimerEndsAt: null,
+        restTimerSeconds: 90
       }))
     }),
     {
@@ -445,7 +440,10 @@ export const useAppStore = create<AppState>()(
         meals: state.meals,
         mealItems: state.mealItems,
         weightLogs: state.weightLogs,
-        dailyWater: state.dailyWater
+        dailyWater: state.dailyWater,
+        restTimerActive: state.restTimerActive,
+        restTimerSeconds: state.restTimerSeconds,
+        restTimerEndsAt: state.restTimerEndsAt
       })
     }
   )

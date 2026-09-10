@@ -1,13 +1,13 @@
 import { Timer, Volume2, Check } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
+import { useRestTimer } from '../../../lib/useRestTimer';
 import { WorkoutDay } from '../../../lib/types';
 
 export default function ActiveWorkoutHeader({ workoutDay, onFinish }: { workoutDay: WorkoutDay | undefined, onFinish: () => void }) {
-  const { restTimerActive, restTimerSeconds, restTimerElapsed } = useAppStore();
+  const { remaining, active: restTimerActive } = useRestTimer();
   
-  const remainingTimer = Math.max(0, restTimerSeconds - restTimerElapsed);
-  const m = Math.floor(remainingTimer / 60).toString().padStart(2, '0');
-  const s = (remainingTimer % 60).toString().padStart(2, '0');
+  const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+  const s = (remaining % 60).toString().padStart(2, '0');
 
   return (
     <div className="bg-[var(--color-panel-bg)] rounded-2xl p-6 lg:p-8 border border-[var(--color-border)]">

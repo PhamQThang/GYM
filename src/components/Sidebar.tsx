@@ -1,6 +1,7 @@
 import { LayoutDashboard, Dumbbell, Utensils, TrendingUp, Settings, Flame, Timer, History } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../lib/store';
+import { useRestTimer } from '../lib/useRestTimer';
 import { calculateWorkoutStreak } from '../lib/analytics';
 
 interface SidebarProps {
@@ -9,11 +10,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const { user, restTimerActive, restTimerSeconds, restTimerElapsed, resetRestTimer, workoutHistory } = useAppStore();
+  const { user, resetRestTimer, workoutHistory } = useAppStore();
+  const { remaining, active: restTimerActive } = useRestTimer();
   
-  const remainingTimer = Math.max(0, restTimerSeconds - restTimerElapsed);
-  const m = Math.floor(remainingTimer / 60).toString().padStart(2, '0');
-  const s = (remainingTimer % 60).toString().padStart(2, '0');
+  const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+  const s = (remaining % 60).toString().padStart(2, '0');
   const streak = calculateWorkoutStreak(workoutHistory);
   const navItems = [
     { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
