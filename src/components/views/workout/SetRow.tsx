@@ -26,21 +26,20 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
 
   const [localWeight, setLocalWeight] = React.useState<string | number>(getInitialWeight());
   const [localReps, setLocalReps] = React.useState<string | number>(workoutSet.reps || '');
+  const [isEditingWeight, setIsEditingWeight] = React.useState(false);
+  const [isEditingReps, setIsEditingReps] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
 
   React.useEffect(() => {
-    // Only resync if the user hasn't buffered '0' intentionally for an empty planned set
-    let nextWeight: string | number = workoutSet.weight;
-    if (workoutSet.weight === 0 && workoutSet.status === 'PLANNED') {
-       if (localWeight !== '0' && localWeight !== 0) {
-          nextWeight = '';
-       } else {
-          nextWeight = localWeight;
-       }
-    }
+    if (isEditingWeight) return;
+    const nextWeight = workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight;
     setLocalWeight(nextWeight);
+  }, [workoutSet.weight, workoutSet.status, isEditingWeight]);
+
+  React.useEffect(() => {
+    if (isEditingReps) return;
     setLocalReps(workoutSet.reps || '');
-  }, [workoutSet.weight, workoutSet.reps, workoutSet.status, localWeight]);
+  }, [workoutSet.reps, isEditingReps]);
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -60,10 +59,31 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
     }
   };
 
-  const handleBlur = () => {
+  const handleWeightFocus = () => setIsEditingWeight(true);
+  const handleWeightBlur = () => {
+    setIsEditingWeight(false);
     // Revert visual to valid committed store state on blur if left empty/invalid
     setLocalWeight(workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight);
+  };
+
+  const handleRepsFocus = () => setIsEditingReps(true);
+  const handleRepsBlur = () => {
+    setIsEditingReps(false);
     setLocalReps(workoutSet.reps || '');
+  };
+
+  const handleWeightStep = (amount: number) => {
+    const nextVal = Math.max(0, workoutSet.weight + amount);
+    setIsEditingWeight(false);
+    setLocalWeight(nextVal);
+    updateSet(workoutSet.id, nextVal, workoutSet.reps);
+  };
+
+  const handleRepsStep = (amount: number) => {
+    const nextVal = Math.max(0, workoutSet.reps + amount);
+    setIsEditingReps(false);
+    setLocalReps(nextVal);
+    updateSet(workoutSet.id, workoutSet.weight, nextVal);
   };
 
   return (
@@ -90,7 +110,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
               <div className="flex items-center gap-1">
                 <button
                   disabled={isCompleted}
-                  onClick={() => updateSet(workoutSet.id, Math.max(0, workoutSet.weight - DEFAULT_WEIGHT_STEP), workoutSet.reps)}
+                  onClick={() => handleWeightStep(-DEFAULT_WEIGHT_STEP)}
                   className="w-11 h-11 flex shrink-0 items-center justify-center bg-[var(--color-panel-bg)] rounded-xl text-lg font-bold border border-[var(--color-border)] active:bg-[var(--color-border)] disabled:opacity-50"
                   aria-label={`Giảm tạ ${DEFAULT_WEIGHT_STEP} kg`}
                 >
@@ -101,7 +121,8 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   aria-label={`Khối lượng (kg) cho hiệp ${workoutSet.set_number}`}
                   value={localWeight}
                   onChange={handleWeightChange}
-                  onBlur={handleBlur}
+                  onFocus={handleWeightFocus}
+                  onBlur={handleWeightBlur}
                   className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors pb-1"
                   disabled={isCompleted}
                   placeholder="0"
@@ -110,7 +131,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                 />
                 <button
                   disabled={isCompleted}
-                  onClick={() => updateSet(workoutSet.id, workoutSet.weight + DEFAULT_WEIGHT_STEP, workoutSet.reps)}
+                  onClick={() => handleWeightStep(DEFAULT_WEIGHT_STEP)}
                   className="w-11 h-11 flex shrink-0 items-center justify-center bg-[var(--color-panel-bg)] rounded-xl text-lg font-bold border border-[var(--color-border)] active:bg-[var(--color-border)] disabled:opacity-50"
                   aria-label={`Tăng tạ ${DEFAULT_WEIGHT_STEP} kg`}
                 >
@@ -127,7 +148,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
               <div className="flex items-center gap-1">
                 <button
                   disabled={isCompleted}
-                  onClick={() => updateSet(workoutSet.id, workoutSet.weight, Math.max(0, workoutSet.reps - DEFAULT_REPS_STEP))}
+                  onClick={() => handleRepsStep(-DEFAULT_REPS_STEP)}
                   className="w-11 h-11 flex shrink-0 items-center justify-center bg-[var(--color-panel-bg)] rounded-xl text-lg font-bold border border-[var(--color-border)] active:bg-[var(--color-border)] disabled:opacity-50"
                   aria-label={`Giảm ${DEFAULT_REPS_STEP} rep`}
                 >
@@ -138,7 +159,8 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   aria-label={`Số lần (reps) cho hiệp ${workoutSet.set_number}`}
                   value={localReps}
                   onChange={handleRepsChange}
-                  onBlur={handleBlur}
+                  onFocus={handleRepsFocus}
+                  onBlur={handleRepsBlur}
                   className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 transition-colors pb-1"
                   disabled={isCompleted}
                   placeholder="0"
@@ -147,7 +169,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                 />
                 <button
                   disabled={isCompleted}
-                  onClick={() => updateSet(workoutSet.id, workoutSet.weight, workoutSet.reps + DEFAULT_REPS_STEP)}
+                  onClick={() => handleRepsStep(DEFAULT_REPS_STEP)}
                   className="w-11 h-11 flex shrink-0 items-center justify-center bg-[var(--color-panel-bg)] rounded-xl text-lg font-bold border border-[var(--color-border)] active:bg-[var(--color-border)] disabled:opacity-50"
                   aria-label={`Tăng ${DEFAULT_REPS_STEP} rep`}
                 >
