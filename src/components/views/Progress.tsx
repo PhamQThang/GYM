@@ -7,7 +7,14 @@ import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate
 
 
 export default function Progress() {
-  const { user, weightLogs, mealItems, logWeight, workoutHistory, setHistory, workoutExercises, exercises } = useAppStore();
+  const user = useAppStore((s) => s.user);
+  const weightLogs = useAppStore((s) => s.weightLogs);
+  const mealItems = useAppStore((s) => s.mealItems);
+  const logWeight = useAppStore((s) => s.logWeight);
+  const workoutHistory = useAppStore((s) => s.workoutHistory);
+  const setHistory = useAppStore((s) => s.setHistory);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const exercises = useAppStore((s) => s.exercises);
 
   const weightDelta = user.target_weight - user.current_weight;
   const startingWeight = weightLogs[0]?.weight ?? null;

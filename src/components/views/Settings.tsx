@@ -5,7 +5,10 @@ import { Save, Download, Upload, AlertTriangle, CheckCircle, RefreshCcw, UserCir
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
 export default function Settings() {
-  const { user, updateUser, importState, resetApp } = useAppStore();
+  const user = useAppStore((s) => s.user);
+  const updateUser = useAppStore((s) => s.updateUser);
+  const importState = useAppStore((s) => s.importState);
+  const resetApp = useAppStore((s) => s.resetApp);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local buffering for UI text inputs

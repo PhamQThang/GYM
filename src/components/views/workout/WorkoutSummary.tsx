@@ -6,7 +6,8 @@ interface WorkoutSummaryProps {
 }
 
 export default function WorkoutSummary({ onClose }: WorkoutSummaryProps) {
-  const { workoutHistory, setHistory } = useAppStore();
+  const workoutHistory = useAppStore((s) => s.workoutHistory);
+  const setHistory = useAppStore((s) => s.setHistory);
   
   // The most recent workout in history is the one we just finished
   const lastWorkout = workoutHistory[workoutHistory.length - 1];

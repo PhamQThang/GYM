@@ -11,7 +11,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const { user, resetRestTimer, workoutHistory } = useAppStore();
+  const user = useAppStore((s) => s.user);
+  const resetRestTimer = useAppStore((s) => s.resetRestTimer);
+  const workoutHistory = useAppStore((s) => s.workoutHistory);
   const { remaining, active: restTimerActive } = useRestTimer();
   
   const m = Math.floor(remaining / 60).toString().padStart(2, '0');

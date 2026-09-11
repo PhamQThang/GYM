@@ -1,18 +1,20 @@
 import React from 'react';
 import { Check, Copy, Trash2, History } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
-import { WorkoutSet, Exercise } from '../../../lib/types';
+import { WorkoutSet } from '../../../lib/types';
 
 interface SetRowProps {
   workoutSet: WorkoutSet;
-  exercise: Exercise;
-  key?: React.Key;
+  prevPerf: WorkoutSet | null;
 }
 
-export default function SetRow({ workoutSet, exercise }: SetRowProps) {
-  const { updateSet, completeSet, uncompleteSet, removeSet, duplicateSet, getPreviousPerformance } = useAppStore();
+const SetRow = React.memo(function SetRow({ workoutSet, prevPerf }: SetRowProps) {
+  const updateSet = useAppStore((s) => s.updateSet);
+  const completeSet = useAppStore((s) => s.completeSet);
+  const uncompleteSet = useAppStore((s) => s.uncompleteSet);
+  const removeSet = useAppStore((s) => s.removeSet);
+  const duplicateSet = useAppStore((s) => s.duplicateSet);
 
-  const prevPerf = getPreviousPerformance(exercise.id);
   const isCompleted = workoutSet.status === 'COMPLETED';
 
   // UI Buffers to allow empty string edits without pushing NaN to domain state
@@ -136,4 +138,6 @@ export default function SetRow({ workoutSet, exercise }: SetRowProps) {
       </div>
     </div>
   );
-}
+});
+
+export default SetRow;

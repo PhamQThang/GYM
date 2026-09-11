@@ -10,14 +10,12 @@ import ExerciseLibrary from './workout/ExerciseLibrary';
 export default function Workout() {
   const [showSummary, setShowSummary] = useState(false);
   const [subTab, setSubTab] = useState<'active' | 'program' | 'library'>('active');
-  const { 
-    workoutDays, 
-    activeSession, 
-    startWorkout, 
-    finishWorkout,
-    workoutExercises,
-    exercises
-  } = useAppStore();
+  const workoutDays = useAppStore((s) => s.workoutDays);
+  const activeSession = useAppStore((s) => s.activeSession);
+  const startWorkout = useAppStore((s) => s.startWorkout);
+  const finishWorkout = useAppStore((s) => s.finishWorkout);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const exercises = useAppStore((s) => s.exercises);
 
   const handleFinish = () => {
     finishWorkout();

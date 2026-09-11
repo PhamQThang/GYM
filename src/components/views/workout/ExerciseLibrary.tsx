@@ -5,7 +5,9 @@ import { Card } from '../../ui/Card';
 import { Exercise } from '../../../lib/types';
 
 export default function ExerciseLibrary() {
-  const { exercises, addCustomExercise, hideExercise } = useAppStore();
+  const exercises = useAppStore((s) => s.exercises);
+  const addCustomExercise = useAppStore((s) => s.addCustomExercise);
+  const hideExercise = useAppStore((s) => s.hideExercise);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Only show active exercises

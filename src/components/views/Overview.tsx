@@ -68,20 +68,18 @@ function WeightModal({ onClose, onSave }: { onClose: () => void; onSave: (w: num
 export default function Overview({ setActiveTab }: OverviewProps) {
   const [showWeightModal, setShowWeightModal] = useState(false);
 
-  const {
-    user,
-    mealItems,
-    meals,
-    weightLogs,
-    workoutDays,
-    workoutExercises,
-    exercises,
-    workoutHistory,
-    setHistory,
-    programs,
-    startWorkout,
-    logWeight,
-  } = useAppStore();
+  const user = useAppStore((s) => s.user);
+  const mealItems = useAppStore((s) => s.mealItems);
+  const meals = useAppStore((s) => s.meals);
+  const weightLogs = useAppStore((s) => s.weightLogs);
+  const workoutDays = useAppStore((s) => s.workoutDays);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const exercises = useAppStore((s) => s.exercises);
+  const workoutHistory = useAppStore((s) => s.workoutHistory);
+  const setHistory = useAppStore((s) => s.setHistory);
+  const programs = useAppStore((s) => s.programs);
+  const startWorkout = useAppStore((s) => s.startWorkout);
+  const logWeight = useAppStore((s) => s.logWeight);
 
   // ── Date & Greeting ──────────────────────────────
   const todayDateLabel = formatTodayVietnamese();

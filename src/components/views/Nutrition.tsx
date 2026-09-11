@@ -7,7 +7,16 @@ import { toLocalDateKey, formatVietnamShortDate } from '../../lib/analytics';
 export default function Nutrition() {
   const todayKey = toLocalDateKey(new Date());
   const [selectedDate, setSelectedDate] = useState(() => todayKey);
-  const { user, foods, mealItems, addWater, logMealItem, completeMeal, removeMealItem, getMealsForDate, ensureMealsForDate, getWaterForDate } = useAppStore();
+  const user = useAppStore((s) => s.user);
+  const foods = useAppStore((s) => s.foods);
+  const mealItems = useAppStore((s) => s.mealItems);
+  const addWater = useAppStore((s) => s.addWater);
+  const logMealItem = useAppStore((s) => s.logMealItem);
+  const completeMeal = useAppStore((s) => s.completeMeal);
+  const removeMealItem = useAppStore((s) => s.removeMealItem);
+  const getMealsForDate = useAppStore((s) => s.getMealsForDate);
+  const ensureMealsForDate = useAppStore((s) => s.ensureMealsForDate);
+  const getWaterForDate = useAppStore((s) => s.getWaterForDate);
 
   useEffect(() => {
     ensureMealsForDate(selectedDate);

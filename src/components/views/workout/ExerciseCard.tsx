@@ -2,7 +2,7 @@ import { Dumbbell, Plus } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
 import { WorkoutExercise, Exercise } from '../../../lib/types';
 import SetRow from './SetRow';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -10,7 +10,17 @@ interface ExerciseCardProps {
 }
 
 export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCardProps) {
-  const { activeSets, addSet, loadPlannedSets } = useAppStore();
+  const activeSets = useAppStore((s) => s.activeSets);
+  const addSet = useAppStore((s) => s.addSet);
+  const loadPlannedSets = useAppStore((s) => s.loadPlannedSets);
+  const getPreviousPerformance = useAppStore((s) => s.getPreviousPerformance);
+  const setHistory = useAppStore((s) => s.setHistory);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+
+  const prevPerf = useMemo(
+    () => getPreviousPerformance(exercise.id),
+    [exercise.id, setHistory, workoutExercises, getPreviousPerformance]
+  );
 
   useEffect(() => {
     // Automatically load planned sets when this exercise card is mounted
@@ -56,7 +66,7 @@ export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCard
       {/* Sets */}
       <div className="flex flex-col gap-2">
          {exerciseSets.map(set => (
-            <SetRow key={set.id} workoutSet={set} exercise={exercise} />
+            <SetRow key={set.id} workoutSet={set} prevPerf={prevPerf} />
          ))}
       </div>
 

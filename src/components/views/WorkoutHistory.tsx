@@ -6,7 +6,11 @@ import { Card } from '../ui/Card';
 import WorkoutDetail from './workout/WorkoutDetail';
 
 export default function WorkoutHistory() {
-  const { workoutHistory, setHistory, workoutDays, workoutExercises, exercises } = useAppStore();
+  const workoutHistory = useAppStore((s) => s.workoutHistory);
+  const setHistory = useAppStore((s) => s.setHistory);
+  const workoutDays = useAppStore((s) => s.workoutDays);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const exercises = useAppStore((s) => s.exercises);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const completed = workoutHistory

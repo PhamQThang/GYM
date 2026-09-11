@@ -4,7 +4,14 @@ import { Plus, Settings2, Trash2, ChevronDown, ChevronUp, Check, FolderPlus, Arr
 import { Card } from '../../ui/Card';
 
 export default function ProgramEditor() {
-  const { programs, workoutDays, workoutExercises, exercises, addWorkoutDay, removeExerciseFromDay, updateWorkoutExercise, reorderExercises } = useAppStore();
+  const programs = useAppStore((s) => s.programs);
+  const workoutDays = useAppStore((s) => s.workoutDays);
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const exercises = useAppStore((s) => s.exercises);
+  const addWorkoutDay = useAppStore((s) => s.addWorkoutDay);
+  const removeExerciseFromDay = useAppStore((s) => s.removeExerciseFromDay);
+  const updateWorkoutExercise = useAppStore((s) => s.updateWorkoutExercise);
+  const reorderExercises = useAppStore((s) => s.reorderExercises);
   const program = programs[0];
   const pDays = workoutDays.filter(d => d.program_id === program?.id && d.is_active !== false);
 
@@ -188,7 +195,8 @@ export default function ProgramEditor() {
 }
 
 function AddExerciseToDayModal({ dayId, onClose }: { dayId: string, onClose: () => void }) {
-  const { exercises, addExerciseToDay } = useAppStore();
+  const exercises = useAppStore((s) => s.exercises);
+  const addExerciseToDay = useAppStore((s) => s.addExerciseToDay);
   const [search, setSearch] = useState('');
   
   const activeExs = exercises.filter(e => e.is_active !== false && e.name.toLowerCase().includes(search.toLowerCase()));
