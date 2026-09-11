@@ -1,4 +1,5 @@
 # PULSE / KINETIC — Gym Tracker
+[![CI](https://github.com/PhamQThang/GYM/actions/workflows/ci.yml/badge.svg)](https://github.com/PhamQThang/GYM/actions/workflows/ci.yml)
 
 A personal gym, workout, nutrition, and progress tracking dashboard designed for swift, distraction-free logging with a premium dark glassmorphism aesthetic.
 
