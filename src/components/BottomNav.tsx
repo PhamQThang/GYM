@@ -6,9 +6,7 @@ import { useAppStore } from '../lib/store';
 import { navItems } from '../lib/nav';
 import { ROUTES } from '../lib/navigation';
 
-interface BottomNavProps {}
-
-export default function BottomNav(_props: BottomNavProps) {
+export default function BottomNav() {
   const { pathname } = useLocation();
   const { remaining, active: restTimerActive } = useRestTimer();
   const resetRestTimer = useAppStore(state => state.resetRestTimer);
@@ -54,7 +52,7 @@ export default function BottomNav(_props: BottomNavProps) {
 
         <ul className="flex items-center justify-around px-2 py-1">
           {navItems.map((item) => {
-            let active = false;
+            let active;
             if (item.id === 'overview') {
               active = pathname === ROUTES.overview;
             } else if (item.id === 'workout') {

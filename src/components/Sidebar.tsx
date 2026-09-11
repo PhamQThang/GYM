@@ -7,9 +7,7 @@ import { useRestTimer } from '../lib/useRestTimer';
 import { calculateWorkoutStreak } from '../lib/analytics';
 import { ROUTES } from '../lib/navigation';
 
-interface SidebarProps {}
-
-export default function Sidebar(_props: SidebarProps) {
+export default function Sidebar() {
   const { pathname } = useLocation();
   const user = useAppStore((s) => s.user);
   const resetRestTimer = useAppStore((s) => s.resetRestTimer);
@@ -58,7 +56,7 @@ export default function Sidebar(_props: SidebarProps) {
       <nav className="px-4 flex-1">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            let active = false;
+            let active;
             if (item.id === 'overview') {
               active = pathname === ROUTES.overview;
             } else if (item.id === 'workout') {

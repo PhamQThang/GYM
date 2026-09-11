@@ -20,7 +20,7 @@ export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCard
 
   const lastSessionSets = useMemo(
     () => getLastSessionSets(exercise.id),
-    [exercise.id, setHistory, workoutExercises, getLastSessionSets]
+    [exercise.id, getLastSessionSets]
   );
 
   const prIds = useMemo(

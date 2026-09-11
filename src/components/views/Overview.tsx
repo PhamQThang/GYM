@@ -17,7 +17,7 @@ import {
 // ─────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────
-interface OverviewProps {}
+
 
 // ─────────────────────────────────────────────────
 // WEIGHT MODAL (minimal inline form)
@@ -65,7 +65,7 @@ function WeightModal({ onClose, onSave }: { onClose: () => void; onSave: (w: num
 // ─────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────
-export default function Overview(_props: OverviewProps) {
+export default function Overview() {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const navigate = useNavigate();
 

@@ -11,7 +11,7 @@ export function useRestTimer() {
 
   useEffect(() => {
     if (!restTimerActive || restTimerEndsAt === null) {
-      setRemaining(0);
+      setTimeout(() => setRemaining(0), 0);
       return;
     }
 

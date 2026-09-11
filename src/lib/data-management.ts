@@ -1,6 +1,6 @@
 import { useAppStore } from './store';
 import { AppState } from './store';
-import { WorkoutSet, Exercise, WorkoutDay, WorkoutExercise, Meal, MealItem, WeightLog } from './types';
+import { WorkoutSet, Exercise, WorkoutDay, WorkoutExercise, Meal, MealItem, WeightLog, WorkoutProgram } from './types';
 
 // Constants
 const SCHEMA_VERSION = 1;
@@ -56,7 +56,7 @@ export function exportWeightCSV(logs: { date: string, weight: number }[]) {
 }
 
 // Ensure the number is finite, not NaN, not Infinity, and non-negative
-const isValidNonNegative = (val: any) => typeof val === 'number' && Number.isFinite(val) && val >= 0;
+const isValidNonNegative = (val: unknown) => typeof val === 'number' && Number.isFinite(val) && val >= 0;
 
 export function validateImportPayload(jsonText: string): { success: boolean; data?: Partial<AppState>; error?: string } {
   try {
@@ -81,7 +81,7 @@ export function validateImportPayload(jsonText: string): { success: boolean; dat
     if (!isValidNonNegative(d.user.current_weight) || !isValidNonNegative(d.user.target_weight)) return { success: false, error: 'Cân nặng phải là một số hợp lệ.' };
     if (!isValidNonNegative(d.user.target_calories)) return { success: false, error: 'Mục tiêu Calories không hợp lệ.' };
 
-    const programsMap = new Set(d.programs.map((p: any) => p.id));
+    const programsMap = new Set(d.programs.map((p: WorkoutProgram) => p.id));
     const workoutDaysMap = new Map<string, WorkoutDay>();
     d.workoutDays.forEach((wd: WorkoutDay) => {
       if (!programsMap.has(wd.program_id)) throw new Error(`WorkoutDay reference broken. Missing Program: ${wd.program_id}`);
@@ -123,7 +123,10 @@ export function validateImportPayload(jsonText: string): { success: boolean; dat
 
     // If all tests pass, construction is successful
     return { success: true, data: d };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Xảy ra lỗi không xác định khi xác thực tệp JSON.' };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message || 'Xảy ra lỗi không xác định khi xác thực tệp JSON.' };
+    }
+    return { success: false, error: 'Xảy ra lỗi không xác định khi xác thực tệp JSON.' };
   }
 }

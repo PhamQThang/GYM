@@ -40,7 +40,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
     }
     setLocalWeight(nextWeight);
     setLocalReps(workoutSet.reps || '');
-  }, [workoutSet.weight, workoutSet.reps, workoutSet.status]);
+  }, [workoutSet.weight, workoutSet.reps, workoutSet.status, localWeight]);
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

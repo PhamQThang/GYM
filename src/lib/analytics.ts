@@ -72,7 +72,7 @@ export function calculateWorkoutStreak(history: WorkoutSession[]): number {
   today.setHours(0, 0, 0, 0);
 
   let streak = 0;
-  let cursor = new Date(today);
+  const cursor = new Date(today);
 
   // Allow yesterday as starting point if no session today
   const todayKey = toLocalDateKey(cursor);
@@ -456,7 +456,7 @@ export function calculateWeightMovingAverage(logs: WeightLog[]): (WeightLog & { 
 
     const windowLogs = sorted.filter((wLog) => {
       const match = wLog.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      let wMs = 0;
+      let wMs;
       if (match) {
         wMs = new Date(parseInt(match[1] || '0', 10), parseInt(match[2] || '0', 10) - 1, parseInt(match[3] || '0', 10)).getTime();
       } else {

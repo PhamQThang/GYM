@@ -378,7 +378,7 @@ export const useAppStore = create<AppState>()(
 
       logWeight: (weight) => set((state) => {
         const dateKey = toLocalDateKey(new Date());
-        let newLogs = [...state.weightLogs];
+        const newLogs = [...state.weightLogs];
         const existingIdx = newLogs.findIndex(wl => wl.date === dateKey);
 
         if (existingIdx !== -1) {
@@ -575,6 +575,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'pulse-kinetic-storage',
       version: 3,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       migrate: (persistedState: any, version: number) => {
         if (version === 0) {
           if (persistedState.user) {
@@ -587,9 +588,10 @@ export const useAppStore = create<AppState>()(
         if (version < 2) {
           if (persistedState.meals && Array.isArray(persistedState.meals)) {
             const legacyDate = toLocalDateKey(new Date());
-            const newTemplates: any[] = [];
-            const newMeals: any[] = [];
+            const newTemplates: MealTemplate[] = [];
+            const newMeals: Meal[] = [];
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             persistedState.meals.forEach((ml: any) => {
               if (ml.date !== undefined && ml.template_id !== undefined) {
                 newMeals.push(ml);
@@ -601,7 +603,9 @@ export const useAppStore = create<AppState>()(
                 user_id: ml.user_id,
                 name: ml.name,
                 scheduled_time: ml.scheduled_time,
-                description: ml.description
+                description: ml.description,
+                is_system: false,
+                is_modified: true
               });
               newMeals.push({
                 ...ml,
@@ -612,6 +616,7 @@ export const useAppStore = create<AppState>()(
 
             persistedState.mealTemplates = [...(persistedState.mealTemplates || []), ...newTemplates];
             const uniqueTmpl = new Map();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             persistedState.mealTemplates.forEach((t: any) => uniqueTmpl.set(t.id, t));
             persistedState.mealTemplates = Array.from(uniqueTmpl.values());
 
@@ -632,6 +637,7 @@ export const useAppStore = create<AppState>()(
           const seedables = ['exercises', 'programs', 'workoutDays', 'workoutExercises', 'foods', 'mealTemplates'];
           seedables.forEach((key) => {
             if (persistedState[key] && Array.isArray(persistedState[key])) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               persistedState[key] = persistedState[key].map((item: any) => ({
                 ...item,
                 is_system: true,
