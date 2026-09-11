@@ -2,7 +2,9 @@
 
 A personal gym, workout, nutrition, and progress tracking dashboard designed for swift, distraction-free logging with a premium dark glassmorphism aesthetic.
 
-Demo: Coming soon
+## Live Demo
+
+[Open the live demo](https://untitled-gules-theta.vercel.app)
 
 *(Note: Screenshot assets are currently missing from the repository.)*
 
