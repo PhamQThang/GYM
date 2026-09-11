@@ -213,34 +213,68 @@ export const useAppStore = create<AppState>()(
 
         if (activeSets.some(s => s.workout_exercise_id === we.id)) return;
 
-        const newSets: WorkoutSet[] = Array.from({ length: we.planned_sets }).map((_, idx) => ({
-          id: 'set-' + Date.now() + '-' + idx,
-          session_id: activeSession.id,
-          workout_exercise_id: we.id,
-          set_number: idx + 1,
-          weight: 0,
-          reps: we.rep_range_max,
-          status: 'PLANNED'
-        }));
+        const historicalSets = get().getLastSessionSets(we.exercise_id);
+
+        const newSets: WorkoutSet[] = Array.from({ length: we.planned_sets }).map((_, idx) => {
+          let weight = 0;
+          let reps = we.rep_range_max;
+
+          if (historicalSets.length > idx && historicalSets[idx]) {
+             weight = historicalSets[idx].weight;
+             reps = historicalSets[idx].reps;
+          }
+
+          return {
+            id: 'set-' + Date.now() + '-' + idx,
+            session_id: activeSession.id,
+            workout_exercise_id: we.id,
+            set_number: idx + 1,
+            weight,
+            reps,
+            status: 'PLANNED'
+          };
+        });
 
         set({ activeSets: [...activeSets, ...newSets] });
       },
 
       // Set Mutations
       addSet: (workoutExerciseId) => {
-        const { activeSession, activeSets } = get();
+        const { activeSession, activeSets, workoutExercises } = get();
         if (!activeSession) return;
 
         const existingSets = activeSets.filter(s => s.workout_exercise_id === workoutExerciseId);
         const lastSet = existingSets[existingSets.length - 1];
+
+        let weight = 0;
+        let reps = 0;
+
+        if (lastSet) {
+           weight = lastSet.weight;
+           reps = lastSet.reps;
+        } else {
+           // No existing sets in this session. Try to prefill from last session
+           const we = workoutExercises.find(w => w.id === workoutExerciseId);
+           if (we) {
+               reps = we.rep_range_max;
+               const historicalSets = get().getLastSessionSets(we.exercise_id);
+               if (historicalSets.length > 0) {
+                   const prevFirstSet = historicalSets.find(s => s.set_number === 1) || historicalSets[0];
+                   if (prevFirstSet) {
+                       weight = prevFirstSet.weight;
+                       reps = prevFirstSet.reps;
+                   }
+               }
+           }
+        }
 
         const newSet: WorkoutSet = {
           id: 'set-' + Date.now(),
           session_id: activeSession.id,
           workout_exercise_id: workoutExerciseId,
           set_number: existingSets.length + 1,
-          weight: lastSet ? lastSet.weight : 0,
-          reps: lastSet ? lastSet.reps : 0,
+          weight: weight,
+          reps: reps,
           status: 'PLANNED'
         };
 
