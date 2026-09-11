@@ -1,16 +1,16 @@
 import { Flame, Timer, Dumbbell } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { navItems } from '../lib/nav';
 import { useAppStore } from '../lib/store';
 import { useRestTimer } from '../lib/useRestTimer';
 import { calculateWorkoutStreak } from '../lib/analytics';
+import { ROUTES } from '../lib/navigation';
 
-interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: any) => void;
-}
+interface SidebarProps {}
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export default function Sidebar(_props: SidebarProps) {
+  const { pathname } = useLocation();
   const user = useAppStore((s) => s.user);
   const resetRestTimer = useAppStore((s) => s.resetRestTimer);
   const workoutHistory = useAppStore((s) => s.workoutHistory);
@@ -57,22 +57,33 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       {/* Navigation */}
       <nav className="px-4 flex-1">
         <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium",
-                  activeTab === item.id
-                    ? "bg-[var(--color-card-bg)] text-[var(--color-primary)] border border-[var(--color-border)]"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-app-bg)] border border-transparent"
-                )}
-              >
-                <item.icon className={cn("w-5 h-5", activeTab === item.id ? "text-[var(--color-primary)]" : "")} />
-                {item.label}
-              </button>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            let active = false;
+            if (item.id === 'overview') {
+              active = pathname === ROUTES.overview;
+            } else if (item.id === 'workout') {
+              active = pathname === ROUTES.workout || pathname === ROUTES.workoutProgram || pathname === ROUTES.workoutLibrary;
+            } else {
+              active = pathname === item.path;
+            }
+
+            return (
+              <li key={item.id}>
+                <NavLink
+                  to={item.path}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium",
+                    active
+                      ? "bg-[var(--color-card-bg)] text-[var(--color-primary)] border border-[var(--color-border)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-app-bg)] border border-transparent"
+                  )}
+                >
+                  <item.icon className={cn("w-5 h-5", active ? "text-[var(--color-primary)]" : "")} />
+                  {item.label}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

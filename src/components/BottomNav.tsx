@@ -1,15 +1,15 @@
 import { Timer } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useRestTimer } from '../lib/useRestTimer';
 import { useAppStore } from '../lib/store';
 import { navItems } from '../lib/nav';
+import { ROUTES } from '../lib/navigation';
 
-interface BottomNavProps {
-  activeTab: string;
-  setActiveTab: (tab: any) => void;
-}
+interface BottomNavProps {}
 
-export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
+export default function BottomNav(_props: BottomNavProps) {
+  const { pathname } = useLocation();
   const { remaining, active: restTimerActive } = useRestTimer();
   const resetRestTimer = useAppStore(state => state.resetRestTimer);
   
@@ -53,39 +53,50 @@ export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
         )}
 
         <ul className="flex items-center justify-around px-2 py-1">
-          {navItems.map((item) => (
-            <li key={item.id} className="relative">
-              <button
-                onClick={() => setActiveTab(item.id)}
-                aria-label={item.label}
-                aria-current={activeTab === item.id ? 'page' : undefined}
-                className={cn(
-                  "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-2 py-1.5 transition-all duration-200 rounded-xl outline-none active:scale-95 touch-manipulation",
-                  activeTab === item.id
-                    ? "text-[var(--color-primary)]"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
-                )}
-              >
-                <div className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-lg mb-0.5 relative z-10 transition-colors",
-                  activeTab === item.id ? "bg-[var(--color-primary)]/10" : "bg-transparent"
-                )}>
-                  <item.icon className="w-5 h-5 mx-auto" />
-                </div>
-                <span className={cn(
-                  "text-[9px] font-medium transition-all duration-200 whitespace-nowrap",
-                  activeTab === item.id ? "font-bold" : ""
-                )}>
-                  {item.label}
-                </span>
-                
-                {/* Active Indicator Line */}
-                {activeTab === item.id && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[var(--color-primary)] rounded-full" />
-                )}
-              </button>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            let active = false;
+            if (item.id === 'overview') {
+              active = pathname === ROUTES.overview;
+            } else if (item.id === 'workout') {
+              active = pathname === ROUTES.workout || pathname === ROUTES.workoutProgram || pathname === ROUTES.workoutLibrary;
+            } else {
+              active = pathname === item.path;
+            }
+
+            return (
+              <li key={item.id} className="relative">
+                <NavLink
+                  to={item.path}
+                  aria-label={item.label}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-2 py-1.5 transition-all duration-200 rounded-xl outline-none active:scale-95 touch-manipulation",
+                    active
+                      ? "text-[var(--color-primary)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
+                  )}
+                >
+                  <div className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-lg mb-0.5 relative z-10 transition-colors",
+                    active ? "bg-[var(--color-primary)]/10" : "bg-transparent"
+                  )}>
+                    <item.icon className="w-5 h-5 mx-auto" />
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-medium transition-all duration-200 whitespace-nowrap",
+                    active ? "font-bold" : ""
+                  )}>
+                    {item.label}
+                  </span>
+                  
+                  {/* Active Indicator Line */}
+                  {active && (
+                    <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[var(--color-primary)] rounded-full" />
+                  )}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </>

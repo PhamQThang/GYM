@@ -1,4 +1,5 @@
 import { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, Scale, Target, Activity, Flame, Dumbbell, Check, TrendingUp, TrendingDown, Timer, Minus } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -15,9 +16,7 @@ import {
 // ─────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────
-interface OverviewProps {
-  setActiveTab: (tab: 'overview' | 'workout' | 'nutrition' | 'progress' | 'history' | 'settings') => void;
-}
+interface OverviewProps {}
 
 // ─────────────────────────────────────────────────
 // WEIGHT MODAL (minimal inline form)
@@ -65,8 +64,9 @@ function WeightModal({ onClose, onSave }: { onClose: () => void; onSave: (w: num
 // ─────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────
-export default function Overview({ setActiveTab }: OverviewProps) {
+export default function Overview(_props: OverviewProps) {
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const navigate = useNavigate();
 
   const user = useAppStore((s) => s.user);
   const mealItems = useAppStore((s) => s.mealItems);
@@ -148,7 +148,7 @@ export default function Overview({ setActiveTab }: OverviewProps) {
   const handleStartWorkout = () => {
     if (!todayDay || !hasExercisesToday) return;
     startWorkout(todayDay.id);
-    setActiveTab('workout');
+    navigate('/workout');
   };
 
   // ── Weight goal label ─────────────────────────────
@@ -197,7 +197,7 @@ export default function Overview({ setActiveTab }: OverviewProps) {
               Ghi Nhận Cân Nặng
             </button>
             <button
-              onClick={() => setActiveTab('nutrition')}
+              onClick={() => navigate('/nutrition')}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-3 rounded-xl font-medium transition-colors"
             >
               <Flame className="w-4 h-4 text-orange-400" />

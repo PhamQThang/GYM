@@ -1,15 +1,24 @@
-import { useState } from 'react';
 import { useAppStore } from '../../lib/store';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Play } from 'lucide-react';
 import ActiveWorkoutHeader from './workout/ActiveWorkoutHeader';
 import ExerciseCard from './workout/ExerciseCard';
 import WorkoutSummary from './workout/WorkoutSummary';
 import ProgramEditor from './workout/ProgramEditor';
 import ExerciseLibrary from './workout/ExerciseLibrary';
+import { ROUTES } from '../../lib/navigation';
 
 export default function Workout() {
-  const [showSummary, setShowSummary] = useState(false);
-  const [subTab, setSubTab] = useState<'active' | 'program' | 'library'>('active');
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  let subTab = 'active';
+  if (pathname === ROUTES.workoutProgram) subTab = 'program';
+  else if (pathname === ROUTES.workoutLibrary) subTab = 'library';
+
+  const showSummary = searchParams.get('summary') === '1';
+
   const workoutDays = useAppStore((s) => s.workoutDays);
   const activeSession = useAppStore((s) => s.activeSession);
   const startWorkout = useAppStore((s) => s.startWorkout);
@@ -19,11 +28,11 @@ export default function Workout() {
 
   const handleFinish = () => {
     finishWorkout();
-    setShowSummary(true);
+    setSearchParams({ summary: '1' });
   };
 
   if (showSummary) {
-    return <WorkoutSummary onClose={() => setShowSummary(false)} />;
+    return <WorkoutSummary onClose={() => setSearchParams({}, { replace: true })} />;
   }
 
   if (!activeSession) {
@@ -31,9 +40,9 @@ export default function Workout() {
       <div className="space-y-6 pb-20 animate-in fade-in duration-500">
          {/* Sub-Navigation Hub */}
          <div className="flex bg-[var(--color-panel-bg)] p-1 rounded-xl border border-[var(--color-border)] w-fit mx-auto mb-8">
-            <button onClick={() => setSubTab('active')} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'active' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Bắt Đầu</button>
-            <button onClick={() => setSubTab('program')} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'program' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Lịch Trình</button>
-            <button onClick={() => setSubTab('library')} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'library' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Thư Viện</button>
+            <button onClick={() => navigate(ROUTES.workout)} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'active' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Bắt Đầu</button>
+            <button onClick={() => navigate(ROUTES.workoutProgram)} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'program' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Lịch Trình</button>
+            <button onClick={() => navigate(ROUTES.workoutLibrary)} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'library' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Thư Viện</button>
          </div>
 
          {subTab === 'active' && (
@@ -53,7 +62,7 @@ export default function Workout() {
                        key={day.id}
                        onClick={() => {
                          if (canStart) startWorkout(day.id);
-                         else setSubTab('program');
+                         else navigate(ROUTES.workoutProgram);
                        }}
                        className={`border p-6 rounded-2xl flex flex-col items-center justify-center transition-all group ${
                          canStart 
