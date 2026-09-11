@@ -1,5 +1,6 @@
 import { CheckCircle2, TrendingUp, Dumbbell, History, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
+import { derivePRsInSession } from '../../../lib/analytics';
 
 interface WorkoutSummaryProps {
   onClose: () => void;
@@ -23,7 +24,8 @@ export default function WorkoutSummary({ onClose }: WorkoutSummaryProps) {
   // Real stats from setHistory
   const sessionSets = setHistory.filter(s => s.session_id === lastWorkout.id);
   const completedSets = sessionSets.filter(s => s.status === 'COMPLETED');
-  const prCount = completedSets.filter(s => s.is_pr).length;
+  const workoutExercises = useAppStore((s) => s.workoutExercises);
+  const prCount = derivePRsInSession(completedSets, setHistory, workoutExercises).size;
   const adherencePct = sessionSets.length > 0
     ? Math.round((completedSets.length / sessionSets.length) * 100)
     : 100;

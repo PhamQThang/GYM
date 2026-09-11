@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { History, ChevronRight, Dumbbell, Timer, TrendingUp, BarChart3, Trophy } from 'lucide-react';
 import { useAppStore } from '../../lib/store';
-import { durationMinutes, formatVietnamDate } from '../../lib/analytics';
+import { durationMinutes, formatVietnamDate, derivePRsInSession } from '../../lib/analytics';
 import { Card } from '../ui/Card';
 import WorkoutDetail from './workout/WorkoutDetail';
 
@@ -75,7 +75,7 @@ export default function WorkoutHistory() {
               }).filter(Boolean)
             );
             const minutes = durationMinutes(session.start_time, session.end_time);
-            const prCount = sessionSets.filter(s => s.is_pr).length;
+            const prCount = derivePRsInSession(sessionSets, setHistory, workoutExercises).size;
 
             return (
               <button

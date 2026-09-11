@@ -36,7 +36,7 @@ export default function Settings() {
       name: localName, 
       height: h, 
       target_weight: tw, 
-      goal_type: localGoal as any 
+      goal_type: localGoal as 'Cut' | 'Maintenance' | 'Lean Bulk'
     });
     showMsg('success', 'Đã lưu cấu hình tài khoản.');
   };

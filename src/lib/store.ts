@@ -77,7 +77,7 @@ export interface AppState {
   getWaterForDate: (dateKey: string) => number;
   getMealsForDate: (dateKey: string) => Meal[];
   ensureMealsForDate: (dateKey: string) => void;
-  getPreviousPerformance: (exerciseId: string) => WorkoutSet | null;
+  getLastSessionSets: (exerciseId: string) => WorkoutSet[];
 
   // Customization Actions (Phase 7)
   addCustomExercise: (exercise: Omit<Exercise, 'id'>) => void;
@@ -196,7 +196,6 @@ export const useAppStore = create<AppState>()(
           set_number: idx + 1,
           weight: 0,
           reps: we.rep_range_max,
-          is_pr: false,
           status: 'PLANNED'
         }));
 
@@ -218,7 +217,6 @@ export const useAppStore = create<AppState>()(
           set_number: existingSets.length + 1,
           weight: lastSet ? lastSet.weight : 0,
           reps: lastSet ? lastSet.reps : 0,
-          is_pr: false,
           status: 'PLANNED'
         };
 
@@ -255,21 +253,16 @@ export const useAppStore = create<AppState>()(
       })),
 
       completeSet: (setId) => {
-        const { workoutExercises, getPreviousPerformance, activeSets: currentSets } = get();
+        const { workoutExercises, activeSets: currentSets } = get();
         const setToComplete = currentSets.find(s => s.id === setId);
         if (!setToComplete) return;
 
         // Resolve the real exercise_id via workout_exercise mapping
         const weConfig = workoutExercises.find(we => we.id === setToComplete.workout_exercise_id);
-        const exerciseId = weConfig?.exercise_id;
-
-        // Check PR: compare against best historical set for this exercise
-        const prev = exerciseId ? getPreviousPerformance(exerciseId) : null;
-        const isPr = prev ? setToComplete.weight > prev.weight : false;
 
         set((state) => ({
           activeSets: state.activeSets.map(s =>
-            s.id === setId ? { ...s, status: 'COMPLETED', is_pr: isPr } : s
+            s.id === setId ? { ...s, status: 'COMPLETED' } : s
           )
         }));
 
@@ -282,7 +275,7 @@ export const useAppStore = create<AppState>()(
       uncompleteSet: (setId) => {
         set((state) => ({
           activeSets: state.activeSets.map(s =>
-            s.id === setId ? { ...s, status: 'PLANNED', is_pr: false } : s
+            s.id === setId ? { ...s, status: 'PLANNED' } : s
           )
         }));
       },
@@ -399,12 +392,17 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      getPreviousPerformance: (exerciseId) => {
-        const { setHistory, workoutExercises } = get();
+      getLastSessionSets: (exerciseId) => {
+        const { setHistory, workoutHistory, workoutExercises } = get();
         const weIds = workoutExercises.filter(we => we.exercise_id === exerciseId).map(we => we.id);
         const mappedSets = setHistory.filter(s => weIds.includes(s.workout_exercise_id) && s.status === 'COMPLETED');
-        if (mappedSets.length === 0) return null;
-        return mappedSets.reduce((prev, current) => (prev.weight > current.weight) ? prev : current);
+        if (mappedSets.length === 0) return [];
+        const sortedSessions = workoutHistory.slice().sort((a,b) => b.start_time.localeCompare(a.start_time));
+        for (const session of sortedSessions) {
+           const sessionSets = mappedSets.filter(s => s.session_id === session.id);
+           if (sessionSets.length > 0) return sessionSets;
+        }
+        return [];
       },
 
       // Phase 7: Exercise Library & Program Actions

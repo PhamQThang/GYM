@@ -1,6 +1,6 @@
 import { ArrowLeft, Dumbbell, Timer, TrendingUp, Trophy, Check, History } from 'lucide-react';
 import { WorkoutSession, WorkoutSet, WorkoutDay, WorkoutExercise, Exercise } from '../../../lib/types';
-import { durationMinutes, formatVietnamDate } from '../../../lib/analytics';
+import { durationMinutes, formatVietnamDate, derivePRsInSession } from '../../../lib/analytics';
 import { Card } from '../../ui/Card';
 
 interface WorkoutDetailProps {
@@ -23,7 +23,8 @@ export default function WorkoutDetail({
   const day = workoutDays.find(d => d.id === session.workout_day_id);
   const sessionSets = setHistory.filter(s => s.session_id === session.id && s.status === 'COMPLETED');
   const minutes = durationMinutes(session.start_time, session.end_time);
-  const prCount = sessionSets.filter(s => s.is_pr).length;
+  const prIds = derivePRsInSession(sessionSets, setHistory, workoutExercises);
+  const prCount = prIds.size;
 
   // Group sets by workout_exercise_id
   const exerciseGroups = new Map<string, WorkoutSet[]>();
@@ -126,7 +127,7 @@ export default function WorkoutDetail({
                         <td className="py-3 px-5 text-center text-sm font-bold text-blue-400">{set.reps}</td>
                         <td className="py-3 px-5 text-center text-sm text-[var(--color-text-muted)]">{(set.weight * set.reps).toLocaleString()} kg</td>
                         <td className="py-3 px-5 text-center">
-                          {set.is_pr ? (
+                          {prIds.has(set.id) ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 px-2 py-0.5 rounded">
                               <Trophy className="w-3 h-3" /> PR
                             </span>

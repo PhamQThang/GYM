@@ -93,7 +93,8 @@ export interface WorkoutSet {
   set_number: number;
   weight: number;
   reps: number;
-  is_pr: boolean;
+  /** @deprecated PR is derived from raw sets and must not be persisted. */
+  is_pr?: boolean;
   status: SetStatus;
 }
 

@@ -1,14 +1,15 @@
 import React from 'react';
-import { Check, Copy, Trash2, History } from 'lucide-react';
+import { Check, Copy, Trash2, History, Trophy } from 'lucide-react';
 import { useAppStore } from '../../../lib/store';
 import { WorkoutSet } from '../../../lib/types';
 
 interface SetRowProps {
   workoutSet: WorkoutSet;
   prevPerf: WorkoutSet | null;
+  isPr?: boolean;
 }
 
-const SetRow = React.memo(function SetRow({ workoutSet, prevPerf }: SetRowProps) {
+const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRowProps) {
   const updateSet = useAppStore((s) => s.updateSet);
   const completeSet = useAppStore((s) => s.completeSet);
   const uncompleteSet = useAppStore((s) => s.uncompleteSet);
@@ -107,15 +108,22 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf }: SetRowProps)
       </div>
 
       {/* Complete Button */}
-      <div className="flex justify-end pr-2 md:pr-0">
+      <div className="flex justify-end pr-2 md:pr-0 relative">
         {isCompleted ? (
-           <button 
-             onClick={() => uncompleteSet(workoutSet.id)}
-             title="Bỏ hoàn thành"
-             className="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black rounded-xl flex items-center justify-center transition-colors group"
-           >
-             <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
-           </button>
+           <div className="relative">
+             {isPr && (
+                <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex items-center justify-center text-[var(--color-primary)] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 px-1 py-1 rounded" title="Personal Record">
+                   <Trophy className="w-3 h-3" />
+                </div>
+             )}
+             <button
+               onClick={() => uncompleteSet(workoutSet.id)}
+               title="Bỏ hoàn thành"
+               className="w-10 h-10 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black rounded-xl flex items-center justify-center transition-colors group"
+             >
+               <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
+             </button>
+           </div>
         ) : (
            <button 
              onClick={() => completeSet(workoutSet.id)}

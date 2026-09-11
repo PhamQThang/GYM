@@ -3,6 +3,7 @@ import { useAppStore } from '../../../lib/store';
 import { WorkoutExercise, Exercise } from '../../../lib/types';
 import SetRow from './SetRow';
 import { useEffect, useMemo } from 'react';
+import { derivePRsInSession } from '../../../lib/analytics';
 
 interface ExerciseCardProps {
   workoutExercise: WorkoutExercise;
@@ -13,13 +14,18 @@ export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCard
   const activeSets = useAppStore((s) => s.activeSets);
   const addSet = useAppStore((s) => s.addSet);
   const loadPlannedSets = useAppStore((s) => s.loadPlannedSets);
-  const getPreviousPerformance = useAppStore((s) => s.getPreviousPerformance);
+  const getLastSessionSets = useAppStore((s) => s.getLastSessionSets);
   const setHistory = useAppStore((s) => s.setHistory);
   const workoutExercises = useAppStore((s) => s.workoutExercises);
 
-  const prevPerf = useMemo(
-    () => getPreviousPerformance(exercise.id),
-    [exercise.id, setHistory, workoutExercises, getPreviousPerformance]
+  const lastSessionSets = useMemo(
+    () => getLastSessionSets(exercise.id),
+    [exercise.id, setHistory, workoutExercises, getLastSessionSets]
+  );
+
+  const prIds = useMemo(
+    () => derivePRsInSession(activeSets, setHistory, workoutExercises),
+    [activeSets, setHistory, workoutExercises]
   );
 
   useEffect(() => {
@@ -65,9 +71,11 @@ export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCard
 
       {/* Sets */}
       <div className="flex flex-col gap-2">
-         {exerciseSets.map(set => (
-            <SetRow key={set.id} workoutSet={set} prevPerf={prevPerf} />
-         ))}
+         {exerciseSets.map(set => {
+            const prevForThisSet = lastSessionSets.find(s => s.set_number === set.set_number) || null;
+            const isPrTarget = prIds.has(set.id);
+            return <SetRow key={set.id} workoutSet={set} prevPerf={prevForThisSet} isPr={isPrTarget} />;
+         })}
       </div>
 
       {/* Add Set Button */}

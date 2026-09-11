@@ -182,9 +182,87 @@ export function calculateWeeklyVolume(
 // ─────────────────────────────────────────────────
 
 /**
- * Derives the best-ever completed set (highest weight) per exercise from setHistory.
+ * Estimated 1-Rep Max using the Epley formula.
+ */
+export function e1RM(weight: number, reps: number): number {
+  if (!Number.isFinite(weight) || !Number.isFinite(reps)) return 0;
+  if (weight <= 0 || reps <= 0) return 0;
+  if (reps === 1) return weight;
+  return weight * (1 + reps / 30);
+}
+
+/**
+ * Derives which active sets in a session are Personal Records.
+ * Max 1 PR per exercise. Evaluates based on highest e1RM against historical best.
+ */
+export function derivePRsInSession(
+  activeSets: WorkoutSet[],
+  setHistory: WorkoutSet[],
+  workoutExercises: WorkoutExercise[]
+): Set<string> {
+  const prIds = new Set<string>();
+  const weMap = new Map(workoutExercises.map(we => [we.id, we]));
+
+  // Group active sets by exerciseId
+  const sessionExerciseSets = new Map<string, WorkoutSet[]>();
+  for (const s of activeSets) {
+    if (s.status !== 'COMPLETED') continue;
+    if (!Number.isFinite(s.weight) || s.weight <= 0) continue;
+    if (!Number.isFinite(s.reps) || s.reps <= 0) continue;
+    const we = weMap.get(s.workout_exercise_id);
+    if (!we) continue;
+    const exId = we.exercise_id;
+    const arr = sessionExerciseSets.get(exId) || [];
+    arr.push(s);
+    sessionExerciseSets.set(exId, arr);
+  }
+
+  const currentSessionId = activeSets[0]?.session_id;
+
+  // Find historical best e1RM for each exercise
+  const historicalBest = new Map<string, number>();
+  for (const s of setHistory) {
+    if (s.status !== 'COMPLETED') continue;
+    if (currentSessionId && s.session_id === currentSessionId) continue;
+    
+    const we = weMap.get(s.workout_exercise_id);
+    if (!we) continue;
+    const exId = we.exercise_id;
+    const e1 = e1RM(s.weight, s.reps);
+    if (e1 > (historicalBest.get(exId) || 0)) {
+       historicalBest.set(exId, e1);
+    }
+  }
+
+  // Determine session PRs
+  for (const [exId, sets] of sessionExerciseSets.entries()) {
+    let sessionBestSet: WorkoutSet | null = null;
+    let maxSessionE1rm = 0;
+
+    for (let i = 0; i < sets.length; i++) {
+       const set = sets[i];
+       if (!set) continue;
+       const e1 = e1RM(set.weight, set.reps);
+       if (e1 >= maxSessionE1rm) {
+         maxSessionE1rm = e1;
+         sessionBestSet = set; // Takes the latest tie-breaker
+       }
+    }
+
+    if (sessionBestSet && maxSessionE1rm > 0) {
+       const hBest = historicalBest.get(exId) || 0;
+       if (maxSessionE1rm > hBest) {
+          prIds.add(sessionBestSet.id);
+       }
+    }
+  }
+
+  return prIds;
+}
+
+/**
+ * Derives the best-ever completed set per exercise from setHistory using e1RM.
  * Returns sorted by achieved date (most recent first).
- * Only considers COMPLETED sets with weight > 0.
  */
 export function calculatePersonalRecords(
   setHistory: WorkoutSet[],
@@ -192,23 +270,23 @@ export function calculatePersonalRecords(
   workoutExercises: WorkoutExercise[],
   exercises: Exercise[]
 ): PersonalRecord[] {
-  const completedSets = setHistory.filter(s => s.status === 'COMPLETED' && s.weight > 0);
-
-  // Map: exercise_id → { bestSet, sessionId }
-  const prMap = new Map<string, { bestSet: WorkoutSet; sessionId: string }>();
+  const prMap = new Map<string, { bestSet: WorkoutSet; sessionId: string; e1rm: number }>();
 
   const sessionMap = new Map(workoutSessions.map(s => [s.id, s]));
   const weMap = new Map(workoutExercises.map(we => [we.id, we]));
 
-  for (const set of completedSets) {
+  for (const set of setHistory) {
+    if (set.status !== 'COMPLETED') continue;
     const we = weMap.get(set.workout_exercise_id);
     if (!we) continue;
     const exId = we.exercise_id;
+    const currentE1RM = e1RM(set.weight, set.reps);
+    if (currentE1RM <= 0) continue;
 
     const existing = prMap.get(exId);
-    if (!existing || set.weight > existing.bestSet.weight ||
-        (set.weight === existing.bestSet.weight && set.reps > existing.bestSet.reps)) {
-      prMap.set(exId, { bestSet: set, sessionId: set.session_id });
+    if (!existing || currentE1RM > existing.e1rm ||
+       (currentE1RM === existing.e1rm && set.session_id !== existing.sessionId)) {
+      prMap.set(exId, { bestSet: set, sessionId: set.session_id, e1rm: currentE1RM });
     }
   }
 
@@ -228,7 +306,6 @@ export function calculatePersonalRecords(
     });
   }
 
-  // Sort most recent PR first
   return results.sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
 }
 
