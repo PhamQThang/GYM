@@ -13,9 +13,13 @@
   - User can quickly adjust weight/reps via macro steppers (e.g., -2.5 kg, +1 rep).
   - Marks set as completed.
 - **Rest**: Rest timer automatically triggers and is globally synced (visible in App Header/Sidebar and Workout Screen).
-- **Finish Workout**: Records session end time.
-- **Workout Summary**: Displays a summary of Duration, Total volume, Exercises completed, Sets completed, PRs, and an Exercise breakdown.
-- **Save Workout**: Persists data to history.
+- **Finish Workout**:
+  - Show confirmation dialog if planned sets remain incomplete.
+  - Record session end time.
+- **Workout Summary** (Review Mode): Displays a summary of Duration, Total volume, Exercises completed, Sets completed, PRs, and an Exercise breakdown for the reviewing session.
+- **Save/Discard Workout**:
+  - Save persists data to history.
+  - Discard deletes the pending session (requests confirmation if user attempts to navigate to Overview directly).
 - **View History or Return to Overview**.
 
 ## 3. Nutrition Logging

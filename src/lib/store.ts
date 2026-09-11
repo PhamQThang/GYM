@@ -55,7 +55,9 @@ export interface AppState {
 
   // Workout Actions
   startWorkout: (workoutDayId: string) => void;
-  finishWorkout: () => void;
+  endWorkout: () => void;
+  saveWorkout: () => void;
+  discardWorkout: () => void;
   loadPlannedSets: (we: WorkoutExercise) => void;
 
   // Set Actions
@@ -153,9 +155,9 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      finishWorkout: () => {
-        const { activeSession, activeSets, workoutHistory, setHistory } = get();
-        if (!activeSession) return;
+      endWorkout: () => {
+        const { activeSession, activeSets } = get();
+        if (!activeSession || activeSession.status !== 'IN_PROGRESS') return;
 
         const completedSets = activeSets.filter(s => s.status === 'COMPLETED');
         const sessionVolume = completedSets.reduce((acc, curr) => {
@@ -167,11 +169,27 @@ export const useAppStore = create<AppState>()(
           return acc;
         }, 0);
 
+        set({
+          activeSession: {
+            ...activeSession,
+            end_time: new Date().toISOString(),
+            status: 'REVIEWING',
+            total_volume: Math.round(sessionVolume),
+          },
+          restTimerActive: false,
+          restTimerEndsAt: null
+        });
+      },
+
+      saveWorkout: () => {
+        const { activeSession, activeSets, workoutHistory, setHistory } = get();
+        if (!activeSession || activeSession.status !== 'REVIEWING') return;
+
+        const completedSets = activeSets.filter(s => s.status === 'COMPLETED');
+
         const completedSession: WorkoutSession = {
           ...activeSession,
-          end_time: new Date().toISOString(),
-          status: 'COMPLETED',
-          total_volume: Math.round(sessionVolume),
+          status: 'COMPLETED'
         };
 
         set({
@@ -179,9 +197,15 @@ export const useAppStore = create<AppState>()(
           setHistory: [...setHistory, ...completedSets],
           activeSession: null,
           activeSets: [],
-          restTimerActive: false
         });
       },
+
+      discardWorkout: () => set({
+        activeSession: null,
+        activeSets: [],
+        restTimerActive: false,
+        restTimerEndsAt: null
+      }),
 
       loadPlannedSets: (we) => {
         const { activeSession, activeSets } = get();

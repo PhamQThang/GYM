@@ -7,6 +7,7 @@ import WorkoutSummary from './workout/WorkoutSummary';
 import ProgramEditor from './workout/ProgramEditor';
 import ExerciseLibrary from './workout/ExerciseLibrary';
 import { ROUTES } from '../../lib/navigation';
+import { useState } from 'react';
 
 export default function Workout() {
   const { pathname } = useLocation();
@@ -22,12 +23,25 @@ export default function Workout() {
   const workoutDays = useAppStore((s) => s.workoutDays);
   const activeSession = useAppStore((s) => s.activeSession);
   const startWorkout = useAppStore((s) => s.startWorkout);
-  const finishWorkout = useAppStore((s) => s.finishWorkout);
+  const endWorkout = useAppStore((s) => s.endWorkout);
+  const activeSets = useAppStore((s) => s.activeSets);
   const workoutExercises = useAppStore((s) => s.workoutExercises);
   const exercises = useAppStore((s) => s.exercises);
 
-  const handleFinish = () => {
-    finishWorkout();
+  const [showConfirmEnd, setShowConfirmEnd] = useState(false);
+
+  const handleFinishRequest = () => {
+    const plannedCount = activeSets.filter(s => s.status === 'PLANNED').length;
+    if (plannedCount > 0) {
+      setShowConfirmEnd(true);
+    } else {
+      doEndWorkout();
+    }
+  };
+
+  const doEndWorkout = () => {
+    endWorkout();
+    setShowConfirmEnd(false);
     setSearchParams({ summary: '1' });
   };
 
@@ -51,28 +65,28 @@ export default function Workout() {
               <p className="text-[var(--color-text-muted)] text-sm max-w-lg mx-auto mb-8">
                 Chọn một ngày tập để bắt đầu ghi nhận.
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                  {workoutDays.filter(d => d.is_active !== false).map(day => {
                    const activeExCount = workoutExercises.filter(we => we.workout_day_id === day.id && we.is_active !== false).length;
                    const canStart = activeExCount > 0;
 
                    return (
-                     <button 
+                     <button
                        key={day.id}
                        onClick={() => {
                          if (canStart) startWorkout(day.id);
                          else navigate(ROUTES.workoutProgram);
                        }}
                        className={`border p-6 rounded-2xl flex flex-col items-center justify-center transition-all group ${
-                         canStart 
-                           ? 'bg-[var(--color-app-bg)] hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)]/50 border-[var(--color-border)]' 
+                         canStart
+                           ? 'bg-[var(--color-app-bg)] hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)]/50 border-[var(--color-border)]'
                            : 'bg-[var(--color-card-bg)]/50 border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5'
                        }`}
                      >
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 transition-colors border ${
-                          canStart 
-                            ? 'bg-[var(--color-card-bg)] group-hover:bg-[var(--color-primary)]/20 border-[var(--color-border)] group-hover:border-[var(--color-primary)]/50' 
+                          canStart
+                            ? 'bg-[var(--color-card-bg)] group-hover:bg-[var(--color-primary)]/20 border-[var(--color-border)] group-hover:border-[var(--color-primary)]/50'
                             : 'bg-red-500/10 border-red-500/20 group-hover:bg-red-500/20'
                         }`}>
                           <Play className={`w-5 h-5 ml-1 transition-colors ${canStart ? 'text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)]' : 'text-red-400'}`} />
@@ -89,7 +103,7 @@ export default function Workout() {
               </div>
            </div>
          )}
-         
+
          {subTab === 'program' && <ProgramEditor />}
          {subTab === 'library' && <ExerciseLibrary />}
       </div>
@@ -105,8 +119,33 @@ export default function Workout() {
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
-      <ActiveWorkoutHeader workoutDay={activeDay} onFinish={handleFinish} />
-      
+      <ActiveWorkoutHeader workoutDay={activeDay} onFinish={handleFinishRequest} />
+
+      {showConfirmEnd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">Kết Thúc Buổi Tập?</h3>
+            <p className="text-[var(--color-text-muted)] mb-6">
+              Còn {activeSets.filter(s => s.status === 'PLANNED').length} hiệp chưa hoàn thành. Kết thúc buổi tập?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmEnd(false)}
+                className="flex-1 py-3 bg-[var(--color-app-bg)] text-white rounded-xl font-semibold border border-[var(--color-border)] transition-colors hover:bg-gray-800"
+              >
+                Tiếp tục tập
+              </button>
+              <button
+                onClick={doEndWorkout}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Kết thúc
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto space-y-8">
         {sessionExercises.map((we, index) => {
           const ex = exercises.find(e => e.id === we.exercise_id);

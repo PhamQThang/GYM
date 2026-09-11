@@ -1,5 +1,5 @@
 export type GoalType = 'Lean Bulk' | 'Cut' | 'Maintenance';
-export type WorkoutStatus = 'IN_PROGRESS' | 'COMPLETED';
+export type WorkoutStatus = 'IN_PROGRESS' | 'REVIEWING' | 'COMPLETED';
 export type SetStatus = 'PLANNED' | 'COMPLETED' | 'SKIPPED';
 export type MealStatus = 'PLANNED' | 'CONSUMED' | 'MISSED';
 
