@@ -31,6 +31,8 @@ export interface WorkoutProgram {
   name: string;
   phase: string;
   description: string;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface WorkoutDay {
@@ -41,6 +43,8 @@ export interface WorkoutDay {
   is_active: boolean;
   focus: string;
   notes: string;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface Exercise {
@@ -53,6 +57,8 @@ export interface Exercise {
   instructions?: string;
   is_custom?: boolean;
   is_active?: boolean;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface WorkoutExercise {
@@ -66,6 +72,8 @@ export interface WorkoutExercise {
   rest_seconds: number;
   notes: string;
   is_active?: boolean;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface WorkoutSession {
@@ -98,6 +106,8 @@ export interface Food {
   carbs_per_serving: number;
   fat_per_serving: number;
   is_quick_add: boolean;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface MealTemplate {
@@ -106,6 +116,8 @@ export interface MealTemplate {
   name: string;
   scheduled_time: string;
   description: string;
+  is_system: boolean;
+  is_modified: boolean;
 }
 
 export interface Meal {

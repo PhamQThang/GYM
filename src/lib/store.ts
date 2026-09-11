@@ -409,15 +409,15 @@ export const useAppStore = create<AppState>()(
 
       // Phase 7: Exercise Library & Program Actions
       addCustomExercise: (exercise) => set((state) => ({
-        exercises: [...state.exercises, { ...exercise, id: 'ex-custom-' + Date.now(), is_custom: true, is_active: true }]
+        exercises: [...state.exercises, { ...exercise, id: 'ex-custom-' + Date.now(), is_custom: true, is_active: true, is_system: false, is_modified: true }]
       })),
 
       updateExercise: (id, updates) => set((state) => ({
-        exercises: state.exercises.map(e => e.id === id ? { ...e, ...updates } : e)
+        exercises: state.exercises.map(e => e.id === id ? { ...e, ...updates, is_modified: true } : e)
       })),
 
       hideExercise: (id) => set((state) => ({
-        exercises: state.exercises.map(e => e.id === id ? { ...e, is_active: false } : e)
+        exercises: state.exercises.map(e => e.id === id ? { ...e, is_active: false, is_modified: true } : e)
       })),
 
       addWorkoutDay: (name, focus) => set((state) => {
@@ -430,13 +430,15 @@ export const useAppStore = create<AppState>()(
             day_of_week: state.workoutDays.length % 7,
             is_active: true,
             focus,
-            notes: ''
+            notes: '',
+            is_system: false,
+            is_modified: true
           }]
         };
       }),
 
       updateWorkoutDay: (dayId, updates) => set((state) => ({
-        workoutDays: state.workoutDays.map(d => d.id === dayId ? { ...d, ...updates } : d)
+        workoutDays: state.workoutDays.map(d => d.id === dayId ? { ...d, ...updates, is_modified: true } : d)
       })),
 
       addExerciseToDay: (dayId, details) => set((state) => {
@@ -456,6 +458,8 @@ export const useAppStore = create<AppState>()(
           rest_seconds: details.rest_seconds || 90,
           notes: details.notes || '',
           is_active: true,
+          is_system: false,
+          is_modified: true,
         };
 
         const updatedExercises = state.workoutExercises.map(we => {
@@ -471,18 +475,18 @@ export const useAppStore = create<AppState>()(
       }),
 
       removeExerciseFromDay: (weId) => set((state) => ({
-        workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, is_active: false } : we)
+        workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, is_active: false, is_modified: true } : we)
       })),
 
       updateWorkoutExercise: (weId, updates) => set((state) => ({
-        workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, ...updates } : we)
+        workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, ...updates, is_modified: true } : we)
       })),
 
       reorderExercises: (dayId, orderedIds) => set((state) => {
         const updated = state.workoutExercises.map(we => {
           if (we.workout_day_id !== dayId) return we;
           const newIndex = orderedIds.indexOf(we.id);
-          return newIndex !== -1 ? { ...we, order_index: newIndex } : we;
+          return newIndex !== -1 ? { ...we, order_index: newIndex, is_modified: true } : we;
         });
         return { workoutExercises: updated };
       }),
@@ -568,6 +572,18 @@ export const useAppStore = create<AppState>()(
             delete persistedState.dailyWater;
           }
         }
+        if (version < 4) {
+          const seedables = ['exercises', 'programs', 'workoutDays', 'workoutExercises', 'foods', 'mealTemplates'];
+          seedables.forEach((key) => {
+            if (persistedState[key] && Array.isArray(persistedState[key])) {
+              persistedState[key] = persistedState[key].map((item: any) => ({
+                ...item,
+                is_system: true,
+                is_modified: true
+              }));
+            }
+          });
+        }
         return persistedState;
       },
       onRehydrateStorage: () => (state) => {
@@ -583,8 +599,17 @@ export const useAppStore = create<AppState>()(
           return m;
         });
 
+        let finalMeals = state.meals;
         if (updated) {
-          useAppStore.setState({ meals: nextMeals });
+          finalMeals = nextMeals;
+        }
+
+        const synced = syncSeedData(state);
+
+        if (updated || Object.keys(synced).length > 0) {
+          setTimeout(() => {
+            useAppStore.setState({ meals: finalMeals, ...synced });
+          }, 0);
         }
       },
       partialize: (state) => ({
@@ -609,3 +634,64 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+function syncSeedData(state: AppState): Partial<AppState> {
+  const processCollection = <T extends { id: string, is_system?: boolean, is_modified?: boolean }>(
+    persistedList: T[],
+    seedList: T[]
+  ): { updated: boolean, data: T[] } => {
+    const listMap = new Map<string, T>();
+    persistedList.forEach(i => listMap.set(i.id, i));
+    let collectionUpdated = false;
+    const finalCollection: T[] = [];
+
+    for (const seedItem of seedList) {
+      const existing = listMap.get(seedItem.id);
+      if (!existing) {
+        finalCollection.push({ ...seedItem });
+        collectionUpdated = true;
+      } else {
+        if (existing.is_system === true && existing.is_modified === false) {
+          finalCollection.push({ ...seedItem });
+          if (JSON.stringify(existing) !== JSON.stringify(seedItem)) {
+             collectionUpdated = true;
+          }
+        } else {
+          finalCollection.push(existing);
+        }
+      }
+    }
+
+    for (const existing of persistedList) {
+      const seedMatch = seedList.find(s => s.id === existing.id);
+      if (!seedMatch) {
+        finalCollection.push(existing);
+      }
+    }
+
+    if (collectionUpdated || finalCollection.length !== persistedList.length) {
+      return { updated: true, data: finalCollection };
+    }
+    return { updated: false, data: persistedList };
+  };
+
+  const ex = processCollection(state.exercises, SEED_EXERCISES);
+  const prog = processCollection(state.programs, [SEED_PROGRAM]);
+  const days = processCollection(state.workoutDays, SEED_WORKOUT_DAYS);
+  const we = processCollection(state.workoutExercises, SEED_WORKOUT_EXERCISES);
+  const foods = processCollection(state.foods, SEED_FOODS);
+  const mt = processCollection(state.mealTemplates, SEED_MEAL_TEMPLATES);
+
+  const hasUpdate = ex.updated || prog.updated || days.updated || we.updated || foods.updated || mt.updated;
+
+  if (!hasUpdate) return {};
+
+  return {
+    ...(ex.updated && { exercises: ex.data }),
+    ...(prog.updated && { programs: prog.data }),
+    ...(days.updated && { workoutDays: days.data }),
+    ...(we.updated && { workoutExercises: we.data }),
+    ...(foods.updated && { foods: foods.data }),
+    ...(mt.updated && { mealTemplates: mt.data })
+  };
+}

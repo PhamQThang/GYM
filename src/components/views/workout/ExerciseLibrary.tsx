@@ -112,7 +112,7 @@ function AddExerciseModal({ onClose, onAdd }: { onClose: () => void, onAdd: (ex:
              <button 
                onClick={() => {
                   if (!name || !muscle) return;
-                  onAdd({ name, primary_muscle: muscle, secondary_muscles: [], type: 'strength', is_custom: true, is_active: true });
+                  onAdd({ name, primary_muscle: muscle, secondary_muscles: [], type: 'strength', is_custom: true, is_active: true, is_system: false, is_modified: true });
                }}
                className="bg-[var(--color-primary)] text-black font-semibold px-6 py-2 rounded-lg hover:bg-[var(--color-primary-dark)] transition-colors"
              >
