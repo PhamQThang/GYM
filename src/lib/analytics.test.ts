@@ -12,19 +12,16 @@ import type { WorkoutSession, WorkoutSet, MealItem, WorkoutExercise, Exercise } 
 describe('analytics.ts', () => {
 
   describe('toLocalDateKey', () => {
-    it('returns the same local date key for 00:30 and 23:30 in Vietnam', () => {
-      // In Vietnam time (Asia/Ho_Chi_Minh has UTC offset +07:00), 
-      // 00:30 on Sept 10 is Sept 9 17:30 UTC.
-      // 23:30 on Sept 10 is Sept 10 16:30 UTC.
-      // A common mistake with toISOString() is that 2026-09-09T17:30Z becomes Sept 9 instead of Sept 10.
-      
-      // We will parse ISO timestamps with fixed UTC offsets.
-      // 2026-09-10T00:30:00+07:00 explicitly means 00:30 local time in Vietnam.
-      const dateEarly = '2026-09-10T00:30:00+07:00';
-      const dateLate = '2026-09-10T23:30:00+07:00';
+      it('returns the same local date key for 00:30 and 23:30 in Vietnam', () => {
+        // In Vietnam time (Asia/Ho_Chi_Minh has UTC offset +07:00),
+        // 00:30 on Sept 10 is Sept 9 17:30 UTC.
+        // 23:30 on Sept 10 is Sept 10 16:30 UTC.
+        // We test with explicit timezone-aware Date instances to guarantee portability.
+        const dateEarly = new Date('2026-09-09T17:30:00Z');
+        const dateLate = new Date('2026-09-10T16:30:00Z');
 
-      const keyEarly = toLocalDateKey(dateEarly);
-      const keyLate = toLocalDateKey(dateLate);
+        const keyEarly = toLocalDateKey(dateEarly);
+        const keyLate = toLocalDateKey(dateLate);
 
       expect(keyEarly).toBe('2026-09-10');
       expect(keyLate).toBe('2026-09-10');
@@ -45,7 +42,7 @@ describe('analytics.ts', () => {
       id: `s-${dateKey}-${time}`,
       user_id: 'u-1',
       workout_day_id: 'w-1',
-      start_time: `${dateKey}T${time}`,
+      start_time: `${dateKey}T${time}+07:00`,
       status,
       total_volume: 0
     });
@@ -130,7 +127,7 @@ describe('analytics.ts', () => {
       carbs: macros.c,
       fat: macros.f,
       calories: macros.cal,
-      logged_at: useLoggedAt ? `${dateKey}T${time}` : undefined,
+      logged_at: useLoggedAt ? `${dateKey}T${time}+07:00` : undefined,
     } as MealItem);
 
     it('places an item on local date into the correct bucket', () => {
