@@ -141,7 +141,7 @@ export const useAppStore = create<AppState>()(
 
       // Workout
       startWorkout: (workoutDayId) => {
-        const sessionId = 'session-' + Date.now();
+        const sessionId = 'session-' + crypto.randomUUID();
         set({
           activeSession: {
             id: sessionId,
@@ -150,7 +150,8 @@ export const useAppStore = create<AppState>()(
             start_time: new Date().toISOString(),
             status: 'IN_PROGRESS',
             total_volume: 0,
-          },
+              loaded_planned_exercises: [],
+            },
           activeSets: [],
         });
       },
@@ -208,10 +209,11 @@ export const useAppStore = create<AppState>()(
       }),
 
       loadPlannedSets: (we) => {
-        const { activeSession, activeSets } = get();
-        if (!activeSession) return;
+          const { activeSession, activeSets } = get();
+          if (!activeSession) return;
 
-        if (activeSets.some(s => s.workout_exercise_id === we.id)) return;
+          if (activeSession.loaded_planned_exercises?.includes(we.id)) return;
+          set({ activeSession: { ...activeSession, loaded_planned_exercises: [...(activeSession.loaded_planned_exercises || []), we.id] } });
 
         const historicalSets = get().getLastSessionSets(we.exercise_id);
 
@@ -225,7 +227,7 @@ export const useAppStore = create<AppState>()(
           }
 
           return {
-            id: 'set-' + Date.now() + '-' + idx,
+            id: 'set-' + crypto.randomUUID(),
             session_id: activeSession.id,
             workout_exercise_id: we.id,
             set_number: idx + 1,
@@ -240,50 +242,68 @@ export const useAppStore = create<AppState>()(
 
       // Set Mutations
       addSet: (workoutExerciseId) => {
-        const { activeSession, activeSets, workoutExercises } = get();
-        if (!activeSession) return;
+          const { activeSession, activeSets, workoutExercises } = get();
+          if (!activeSession) return;
 
-        const existingSets = activeSets.filter(s => s.workout_exercise_id === workoutExerciseId);
-        const lastSet = existingSets[existingSets.length - 1];
+          const existingSets = activeSets.filter(s => s.workout_exercise_id === workoutExerciseId);
+          let weight = 0;
+          let reps = 0;
 
-        let weight = 0;
-        let reps = 0;
+          const lastSet = existingSets[existingSets.length - 1];
 
-        if (lastSet) {
-           weight = lastSet.weight;
-           reps = lastSet.reps;
-        } else {
-           // No existing sets in this session. Try to prefill from last session
-           const we = workoutExercises.find(w => w.id === workoutExerciseId);
-           if (we) {
-               reps = we.rep_range_max;
-               const historicalSets = get().getLastSessionSets(we.exercise_id);
-               if (historicalSets.length > 0) {
-                   const prevFirstSet = historicalSets.find(s => s.set_number === 1) || historicalSets[0];
-                   if (prevFirstSet) {
-                       weight = prevFirstSet.weight;
-                       reps = prevFirstSet.reps;
-                   }
-               }
-           }
-        }
+          if (lastSet) {
+             weight = lastSet.weight;
+             reps = lastSet.reps;
+          } else {
+             const we = workoutExercises.find(w => w.id === workoutExerciseId);
+             if (we) {
+                 reps = we.rep_range_max;
+                 const historicalSets = get().getLastSessionSets(we.exercise_id);
+                 if (historicalSets.length > 0) {
+                     const prevFirstSet = historicalSets.find(s => s.set_number === 1) || historicalSets[0];
+                     if (prevFirstSet) {
+                         weight = prevFirstSet.weight;
+                         reps = prevFirstSet.reps;
+                     }
+                 }
+             }
+          }
 
-        const newSet: WorkoutSet = {
-          id: 'set-' + Date.now(),
-          session_id: activeSession.id,
-          workout_exercise_id: workoutExerciseId,
-          set_number: existingSets.length + 1,
-          weight: weight,
-          reps: reps,
-          status: 'PLANNED'
-        };
+          const newSet = {
+            id: 'set-' + crypto.randomUUID(),
+            session_id: activeSession.id,
+            workout_exercise_id: workoutExerciseId,
+            set_number: existingSets.length + 1,
+            weight: weight,
+            reps: reps,
+            status: 'PLANNED' as const
+          };
 
-        set({ activeSets: [...activeSets, newSet] });
-      },
+          const newSetsList = [...activeSets, newSet];
+          let counter = 1;
+          const renumbered = newSetsList.map(s => {
+            if (s.workout_exercise_id === workoutExerciseId) {
+              return { ...s, set_number: counter++ };
+            }
+            return s;
+          });
+          set({ activeSets: renumbered });
+        },
 
-      removeSet: (setId) => set((state) => ({
-        activeSets: state.activeSets.filter(s => s.id !== setId)
-      })),
+        removeSet: (setId) => {
+          const state = get();
+          const targetSet = state.activeSets.find(s => s.id === setId);
+          if (!targetSet) return;
+          const filtered = state.activeSets.filter(s => s.id !== setId);
+          let counter = 1;
+          const renumbered = filtered.map(s => {
+            if (s.workout_exercise_id === targetSet.workout_exercise_id) {
+              return { ...s, set_number: counter++ };
+            }
+            return s;
+          });
+          set({ activeSets: renumbered });
+        },
 
       duplicateSet: (setId) => {
         const { activeSession, activeSets } = get();
@@ -296,7 +316,7 @@ export const useAppStore = create<AppState>()(
 
         const newSet: WorkoutSet = {
           ...setToDup,
-          id: 'set-' + Date.now(),
+          id: 'set-' + crypto.randomUUID(),
           set_number: existingSets.length + 1,
           status: 'PLANNED'
         };
@@ -344,7 +364,7 @@ export const useAppStore = create<AppState>()(
           mealItems: [
             ...state.mealItems,
             {
-              id: 'mi-' + Date.now(),
+              id: 'mi-' + crypto.randomUUID(),
               meal_id: mealId,
               food_id: food.id,
               name: food.name,
@@ -465,7 +485,7 @@ export const useAppStore = create<AppState>()(
 
       // Phase 7: Exercise Library & Program Actions
       addCustomExercise: (exercise) => set((state) => ({
-        exercises: [...state.exercises, { ...exercise, id: 'ex-custom-' + Date.now(), is_custom: true, is_active: true, is_system: false, is_modified: true }]
+        exercises: [...state.exercises, { ...exercise, id: 'ex-custom-' + crypto.randomUUID(), is_custom: true, is_active: true, is_system: false, is_modified: true }]
       })),
 
       updateExercise: (id, updates) => set((state) => ({
@@ -480,7 +500,7 @@ export const useAppStore = create<AppState>()(
         const programId = state.programs[0]?.id || 'p-1';
         return {
           workoutDays: [...state.workoutDays, {
-            id: 'wd-' + Date.now(),
+            id: 'wd-' + crypto.randomUUID(),
             program_id: programId,
             name,
             day_of_week: state.workoutDays.length % 7,
@@ -504,7 +524,7 @@ export const useAppStore = create<AppState>()(
         const activeIdsToNewIndex = new Map(activeForDay.map((we, idx) => [we.id, idx]));
 
         const newExercise = {
-          id: 'we-' + Date.now(),
+          id: 'we-' + crypto.randomUUID(),
           workout_day_id: dayId,
           exercise_id: details.exercise_id,
           order_index: activeForDay.length,

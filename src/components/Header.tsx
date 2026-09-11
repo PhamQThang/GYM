@@ -15,14 +15,9 @@ export default function Header() {
            <span className="text-xs font-semibold tracking-wider text-[var(--color-text-muted)]">SẴN SÀNG ĐẨY</span>
         </div>
         
-        <button aria-label="Mở thông báo" className="w-10 h-10 rounded-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-card-bg)] transition-colors relative">
-          <Bell className="w-4 h-4 text-[var(--color-text-main)]" />
-          <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-        </button>
         
-        <button aria-label="Mở hồ sơ người dùng" className="w-10 h-10 rounded-full bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/50 flex items-center justify-center hover:bg-[var(--color-primary)]/30 transition-colors">
-          <User className="w-4 h-4 text-[var(--color-primary)]" />
-        </button>
+        
+        
       </div>
     </header>
   );

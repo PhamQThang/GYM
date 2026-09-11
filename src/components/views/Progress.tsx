@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { Download, Plus, Flame, Dumbbell, Activity, CheckCircle2, History, Trophy } from 'lucide-react';
 import { Card, CardHeader } from '../ui/Card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useAppStore } from '../../lib/store';
 import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate, calculateNutritionHistory, calculateWeightMovingAverage } from '../../lib/analytics';
 import { exportWeightCSV } from '../../lib/data-management';
+import { WeightModal } from '../ui/WeightModal';
 
 
 
 export default function Progress() {
+  const [showWeightModal, setShowWeightModal] = useState(false);
   const user = useAppStore((s) => s.user);
   const weightLogs = useAppStore((s) => s.weightLogs);
   const mealItems = useAppStore((s) => s.mealItems);
@@ -44,6 +47,15 @@ export default function Progress() {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-500">
+      {showWeightModal && (
+        <WeightModal
+          onClose={() => setShowWeightModal(false)}
+          onSave={(wei) => {
+            logWeight(wei);
+            setShowWeightModal(false);
+          }}
+        />
+      )}
       {/* Header Panel */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
         <div>

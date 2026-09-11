@@ -94,6 +94,7 @@ export interface WorkoutSession {
   end_time?: string;
   status: WorkoutStatus;
   total_volume: number;
+  loaded_planned_exercises?: string[];
 }
 
 export interface WorkoutSet {
