@@ -26,6 +26,7 @@ export interface User {
   target_fat: number;
   weight_unit?: 'kg' | 'lbs';
   energy_unit?: 'kcal' | 'kJ';
+  soundEnabled?: boolean;
 }
 
 export interface Goal {

@@ -16,7 +16,8 @@ const MOCK_USER: User = {
   target_carbs: 350,
   target_fat: 85,
   weight_unit: 'kg',
-  energy_unit: 'kcal'
+  energy_unit: 'kcal',
+  soundEnabled: true
 };
 
 export interface AppState {

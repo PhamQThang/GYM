@@ -1,7 +1,7 @@
 import { WeightModal } from '../ui/WeightModal';
 import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Scale, Target, Activity, Flame, Dumbbell, Check, TrendingUp, TrendingDown, Timer, Minus } from 'lucide-react';
+import { Play, Scale, Target, Activity, Flame, Dumbbell, TrendingUp, TrendingDown, Timer, Minus } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
 
 const OverviewWeightChart = lazy(() => import('./OverviewWeightChart'));
@@ -14,6 +14,7 @@ import {
   formatTodayVietnamese,
   getVietnameseGreeting,
 } from '../../lib/analytics';
+import { initGlobalAudio } from '../../lib/notifications';
 
 // ─────────────────────────────────────────────────
 // TYPES
@@ -110,6 +111,7 @@ export default function Overview() {
   // ── Hero: Start Workout ──────────────────────────
   const handleStartWorkout = () => {
     if (!todayDay || !hasExercisesToday) return;
+    initGlobalAudio();
     startWorkout(todayDay.id);
     navigate('/workout');
   };
@@ -422,9 +424,6 @@ export default function Overview() {
                         {pr ? `${pr.bestSet.weight} kg × ${pr.bestSet.reps}` : 'Chưa có PR'}
                       </div>
                     </div>
-                    <button className="w-10 h-10 shrink-0 rounded-lg bg-[var(--color-app-bg)] border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-card-hover)] text-[var(--color-text-muted)] hover:text-white transition-colors ml-2">
-                      <Check className="w-4 h-4" />
-                    </button>
                   </div>
                 );
               })

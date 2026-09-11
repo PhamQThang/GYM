@@ -1,9 +1,12 @@
-import { Timer, Volume2, Check } from 'lucide-react';
+import { Timer, Volume2, VolumeX, Check } from 'lucide-react';
 import { useRestTimer } from '../../../lib/useRestTimer';
 import { WorkoutDay } from '../../../lib/types';
+import { useAppStore } from '../../../lib/store';
 
 export default function ActiveWorkoutHeader({ workoutDay, onFinish }: { workoutDay: WorkoutDay | undefined, onFinish: () => void }) {
   const { remaining, active: restTimerActive } = useRestTimer();
+  const soundEnabled = useAppStore(state => state.user.soundEnabled ?? true);
+  const updateUser = useAppStore(state => state.updateUser);
   
   const m = Math.floor(remaining / 60).toString().padStart(2, '0');
   const s = (remaining % 60).toString().padStart(2, '0');
@@ -31,8 +34,16 @@ export default function ActiveWorkoutHeader({ workoutDay, onFinish }: { workoutD
                 <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">TỰ ĐỘNG NGHỈ</div>
                 <div className="text-lg font-bold leading-none mt-0.5">{restTimerActive ? `${m}:${s}` : 'TẮT'}</div>
               </div>
-              <button className="ml-2 w-8 h-8 rounded-lg bg-[var(--color-card-bg)] flex items-center justify-center hover:bg-[var(--color-card-hover)] transition-colors">
-                <Volume2 className="w-4 h-4 text-[var(--color-text-muted)]" />
+              <button 
+                onClick={() => updateUser({ soundEnabled: !soundEnabled })}
+                aria-label={soundEnabled ? 'Tắt âm báo nghỉ' : 'Bật âm báo nghỉ'}
+                className={`ml-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                  soundEnabled 
+                  ? 'bg-[rgba(74,222,128,0.1)] text-[var(--color-primary)] hover:bg-[rgba(74,222,128,0.2)]' 
+                  : 'bg-[var(--color-card-bg)] text-[var(--color-text-muted)] hover:bg-[var(--color-card-hover)]'
+                }`}
+              >
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </button>
            </div>
            

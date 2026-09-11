@@ -180,4 +180,17 @@ describe('useAppStore mutations', () => {
       expect(items2[1]?.logged_at).toContain('Z'); // is iso string
     });
   });
+
+  describe('Sound Settings', () => {
+    it('allows toggling soundEnabled and persists it', () => {
+      // By default it might be undefined in old mocks or true in new ones, but not false
+      expect(useAppStore.getState().user.soundEnabled).not.toBe(false);
+      
+      useAppStore.getState().updateUser({ soundEnabled: false });
+      expect(useAppStore.getState().user.soundEnabled).toBe(false);
+
+      useAppStore.getState().updateUser({ soundEnabled: true });
+      expect(useAppStore.getState().user.soundEnabled).toBe(true);
+    });
+  });
 });

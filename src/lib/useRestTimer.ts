@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppStore } from './store';
+import { notifyRestTimerComplete } from './notifications';
 
 export function useRestTimer() {
   const restTimerActive = useAppStore(state => state.restTimerActive);
@@ -8,10 +9,14 @@ export function useRestTimer() {
   const stopRestTimer = useAppStore(state => state.stopRestTimer);
   
   const [remaining, setRemaining] = useState(0);
+  const prevRemainingRef = useRef<number>(0);
 
   useEffect(() => {
     if (!restTimerActive || restTimerEndsAt === null) {
-      setTimeout(() => setRemaining(0), 0);
+      setTimeout(() => {
+        setRemaining(0);
+        prevRemainingRef.current = 0;
+      }, 0);
       return;
     }
 
@@ -20,8 +25,15 @@ export function useRestTimer() {
       setRemaining(left);
       
       if (left === 0) {
+        if (prevRemainingRef.current > 0) {
+          const soundEnabled = useAppStore.getState().user.soundEnabled ?? true;
+          if (soundEnabled) {
+            notifyRestTimerComplete();
+          }
+        }
         stopRestTimer();
       }
+      prevRemainingRef.current = left;
     };
 
     update();
