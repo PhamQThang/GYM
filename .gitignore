@@ -8,3 +8,5 @@ coverage/
 !.env.example
 
 .vercel
+*_output.txt
+/scripts-tmp/
