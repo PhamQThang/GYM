@@ -68,7 +68,7 @@ export default function WorkoutDetail({
           <Card key={label} className="flex flex-col items-center justify-center text-center py-6">
             <Icon className={`w-6 h-6 mb-3 ${color}`} />
             <div className={`text-2xl font-bold ${color}`}>{value} <span className="text-xs text-[var(--color-text-muted)] font-normal">{unit}</span></div>
-            <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">{label}</div>
+            <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">{label}</div>
           </Card>
         ))}
       </div>
@@ -98,7 +98,7 @@ export default function WorkoutDetail({
                   </div>
                   <div>
                     <h4 className="font-bold text-base">{exerciseName}</h4>
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">{muscleGroup}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">{muscleGroup}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -111,7 +111,7 @@ export default function WorkoutDetail({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[400px]">
                   <thead>
-                    <tr className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest border-b border-[var(--color-border)]">
+                    <tr className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest border-b border-[var(--color-border)]">
                       <th className="py-3 px-5 font-semibold">HIỆP</th>
                       <th className="py-3 px-5 font-semibold text-center">TẢI (KG)</th>
                       <th className="py-3 px-5 font-semibold text-center">SỐ LẦN</th>

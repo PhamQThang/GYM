@@ -34,8 +34,8 @@ function WeightModal({ onClose, onSave }: { onClose: () => void; onSave: (w: num
   };
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-2xl p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-1">Ghi Nhận Cân Nặng</h3>
+      <div aria-labelledby="weight-modal-title" role="dialog" className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-2xl p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h3 id="weight-modal-title" className="text-lg font-bold mb-1">Ghi Nhận Cân Nặng</h3>
         <p className="text-xs text-[var(--color-text-muted)] mb-6">Nhập cân nặng hiện tại của bạn (kg)</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
@@ -46,7 +46,8 @@ function WeightModal({ onClose, onSave }: { onClose: () => void; onSave: (w: num
             value={val}
             onChange={e => setVal(e.target.value)}
             autoFocus
-            className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-xl font-bold text-center focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+            aria-label="Cân nặng theo kg"
+            className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-xl font-bold text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors"
           />
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl bg-[var(--color-card-bg)] border border-[var(--color-border)] font-semibold text-sm hover:bg-[var(--color-card-hover)] transition-colors">
@@ -263,7 +264,14 @@ export default function Overview() {
                 <span>Tiến độ mục tiêu</span>
                 <span className="text-[var(--color-primary)]">{currentWeight.toFixed(1)} / {targetWeight.toFixed(1)} kg</span>
               </div>
-              <div className="h-1.5 w-full bg-[var(--color-app-bg)] rounded-full overflow-hidden">
+              <div 
+                role="progressbar" 
+                aria-label="Tiến độ cân nặng mục tiêu" 
+                aria-valuemin={0} 
+                aria-valuemax={100} 
+                aria-valuenow={weightProgressPct}
+                className="h-1.5 w-full bg-[var(--color-app-bg)] rounded-full overflow-hidden"
+              >
                 <div className="h-full bg-[var(--color-primary)] rounded-full transition-all duration-700" style={{ width: `${weightProgressPct}%` }}></div>
               </div>
               <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
@@ -292,14 +300,21 @@ export default function Overview() {
             </div>
           </CardHeader>
           <div className="mt-4 flex items-center gap-6">
-            <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <div 
+              role="progressbar" 
+              aria-label="Cân bằng năng lượng hàng ngày" 
+              aria-valuemin={0} 
+              aria-valuemax={100} 
+              aria-valuenow={Math.min(100, adherence.percentage)} 
+              className="relative w-24 h-24 flex items-center justify-center shrink-0"
+            >
+              <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-card-bg)" strokeWidth="10" />
-                <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-primary)" strokeWidth="10" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - adherence.percentage / 100)} className="transition-all duration-1000 ease-out" />
+                <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-primary)" strokeWidth="10" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - Math.min(100, adherence.percentage) / 100)} className="transition-all duration-1000 ease-out" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-xl font-bold">{adherence.percentage}%</span>
-                <span className="text-[10px] text-[var(--color-text-muted)] uppercase">đã đạt</span>
+                <span className="text-xs text-[var(--color-text-muted)] uppercase">đã đạt</span>
               </div>
             </div>
             <div>
@@ -336,7 +351,7 @@ export default function Overview() {
               <CardTitle>NGÀY HIỆN TẠI</CardTitle>
               <h4 className="text-xl font-semibold mt-1">Buổi Tập Hôm Nay</h4>
             </div>
-            <div className={`bg-[var(--color-card-bg)] border border-[var(--color-border)] px-2 py-1 rounded text-[10px] font-semibold tracking-widest uppercase ${hasExercisesToday ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}>
+            <div className={`bg-[var(--color-card-bg)] border border-[var(--color-border)] px-2 py-1 rounded text-xs font-semibold tracking-widest uppercase ${hasExercisesToday ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}>
               {hasExercisesToday ? 'SẴN SÀNG' : 'NGHỈ'}
             </div>
           </CardHeader>
@@ -396,7 +411,7 @@ export default function Overview() {
                 </p>
               </div>
             </div>
-            <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-md text-[10px] font-semibold text-[var(--color-text-muted)] tracking-widest uppercase">
+            <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--color-text-muted)] tracking-widest uppercase">
               {hasExercisesToday ? 'CHỜ DO THỰC HIỆN' : 'NGÀY NGHỈ'}
             </div>
           </div>
@@ -441,7 +456,7 @@ export default function Overview() {
                       </div>
                     </div>
                     <div className="text-right hidden sm:block shrink-0">
-                      <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">KỶ LỤC TRƯỚC</div>
+                      <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">KỶ LỤC TRƯỚC</div>
                       <div className="text-sm font-bold">
                         {pr ? `${pr.bestSet.weight} kg × ${pr.bestSet.reps}` : 'Chưa có PR'}
                       </div>
@@ -476,7 +491,7 @@ export default function Overview() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-semibold">{adherence.actual.toLocaleString()} <span className="text-[var(--color-text-muted)]">/ {user.target_calories.toLocaleString()}</span></div>
-                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">KCAL</div>
+                <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">KCAL</div>
               </div>
             </CardHeader>
 
@@ -489,8 +504,15 @@ export default function Overview() {
                 const percent = macro.target > 0 ? Math.min(100, Math.round((macro.current / macro.target) * 100)) : 0;
                 return (
                   <div key={macro.label} className="flex flex-col items-center">
-                    <div className="relative w-16 h-16 flex items-center justify-center mb-3">
-                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <div 
+                      role="progressbar" 
+                      aria-label={`Tiến độ ${macro.label}`} 
+                      aria-valuemin={0} 
+                      aria-valuemax={100} 
+                      aria-valuenow={percent} 
+                      className="relative w-16 h-16 flex items-center justify-center mb-3"
+                    >
+                      <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--color-app-bg)" strokeWidth="8" />
                         <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="8" strokeDasharray="263.89" strokeDashoffset={263.89 * (1 - percent / 100)} className="transition-all duration-1000 ease-out" />
                       </svg>

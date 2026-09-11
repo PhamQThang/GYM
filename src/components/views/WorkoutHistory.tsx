@@ -91,7 +91,7 @@ export default function WorkoutHistory() {
                     </div>
                     <div>
                       <h3 className="font-bold text-base leading-tight">{day?.name ?? 'Buổi Tập'}</h3>
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">
+                      <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">
                         {formatVietnamDate(session.start_time)}
                       </p>
                     </div>
@@ -105,25 +105,25 @@ export default function WorkoutHistory() {
                 {/* Session stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 p-5 gap-6">
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
                       <TrendingUp className="w-3 h-3" /> Khối Lượng
                     </div>
                     <div className="text-lg font-bold">{session.total_volume.toLocaleString()} <span className="text-xs text-[var(--color-text-muted)] font-normal">kg</span></div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
                       <Timer className="w-3 h-3" /> Thời Gian
                     </div>
                     <div className="text-lg font-bold">{minutes} <span className="text-xs text-[var(--color-text-muted)] font-normal">phút</span></div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
                       <BarChart3 className="w-3 h-3" /> Bài Tập
                     </div>
                     <div className="text-lg font-bold">{exerciseIds.size} <span className="text-xs text-[var(--color-text-muted)] font-normal">bài</span></div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
+                    <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">
                       <Trophy className="w-3 h-3 text-[var(--color-primary)]" /> Kỷ Lục
                     </div>
                     <div className="text-lg font-bold">

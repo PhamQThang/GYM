@@ -121,20 +121,20 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Tên Gọi</label>
-               <input value={localName} onChange={e => setLocalName(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Tên Gọi</label>
+               <input value={localName} onChange={e => setLocalName(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Chiều Cao (cm)</label>
-               <input type="number" value={localHeight} onChange={e => setLocalHeight(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Chiều Cao (cm)</label>
+               <input type="number" value={localHeight} onChange={e => setLocalHeight(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Mục Tiêu (Cân Nặng)</label>
-               <input type="number" value={localTargetWeight} onChange={e => setLocalTargetWeight(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Mục Tiêu (Cân Nặng)</label>
+               <input type="number" value={localTargetWeight} onChange={e => setLocalTargetWeight(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Chu Kỳ Hiện Tại</label>
-               <select value={localGoal} onChange={e => setLocalGoal(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none appearance-none">
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Chu Kỳ Hiện Tại</label>
+               <select value={localGoal} onChange={e => setLocalGoal(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] appearance-none">
                  <option value="Cut">Cut (Giảm Mỡ)</option>
                  <option value="Maintenance">Maintain (Duy Trì)</option>
                  <option value="Lean Bulk">Bulk (Tăng Cơ)</option>
@@ -160,20 +160,20 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Calories (kcal)</label>
-               <input type="number" value={localCals} onChange={e => setLocalCals(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Calories (kcal)</label>
+               <input type="number" value={localCals} onChange={e => setLocalCals(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Protein (g)</label>
-               <input type="number" value={localPro} onChange={e => setLocalPro(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-blue-400 outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Protein (g)</label>
+               <input type="number" value={localPro} onChange={e => setLocalPro(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-blue-400 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Carbs (g)</label>
-               <input type="number" value={localCarbs} onChange={e => setLocalCarbs(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-orange-400 outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Carbs (g)</label>
+               <input type="number" value={localCarbs} onChange={e => setLocalCarbs(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-orange-400 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
-               <label className="block text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Fat (g)</label>
-               <input type="number" value={localFat} onChange={e => setLocalFat(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-yellow-400 outline-none" />
+               <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Fat (g)</label>
+               <input type="number" value={localFat} onChange={e => setLocalFat(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-yellow-400 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
           </div>
           <div className="flex justify-end pt-2">
@@ -230,12 +230,12 @@ export default function Settings() {
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-           <div className="bg-[var(--color-card-bg)] border border-red-500/30 rounded-3xl p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
-              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/30 mb-4 mx-auto">
-                 <AlertTriangle className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="text-xl font-bold text-center mb-2">Cảnh Báo Nguy Hiểm</h3>
+         <div role="dialog" aria-labelledby="reset-modal-title" className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+             <div className="bg-[var(--color-card-bg)] border border-red-500/30 rounded-3xl p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/30 mb-4 mx-auto">
+                   <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
+                <h3 id="reset-modal-title" className="text-xl font-bold text-center mb-2">Cảnh Báo Nguy Hiểm</h3>
               <p className="text-sm text-[var(--color-text-muted)] text-center mb-6 leading-relaxed">
                  Thao tác này sẽ <span className="text-red-400 font-bold">xóa vĩnh viễn</span> toàn bộ lịch sử tập luyện, dinh dưỡng, thiết lập cá nhân và biến thể bài tập của bạn. Hệ thống sẽ trở lại như mới.
               </p>

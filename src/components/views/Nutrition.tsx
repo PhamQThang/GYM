@@ -81,11 +81,11 @@ export default function Nutrition() {
 
         <div className="flex items-center gap-4">
            <div className="flex items-center bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl p-1">
-             <button onClick={handlePrevDay} className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+             <button aria-label="Ngày trước" onClick={handlePrevDay} className="p-2 hover:bg-[var(--color-card-bg)] rounded-lg transition-colors"><ChevronLeft className="w-4 h-4" /></button>
              <div className="px-4 text-sm font-semibold flex items-center gap-2 min-w-[120px] justify-center">
                <CalendarIcon className="w-4 h-4 text-[var(--color-primary)]" /> {displayDate}
              </div>
-             <button onClick={handleNextDay} disabled={selectedDate >= todayKey} className={`p-2 rounded-lg transition-colors ${selectedDate >= todayKey ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-card-bg)]'}`}><ChevronRight className="w-4 h-4" /></button>
+             <button aria-label="Ngày sau" onClick={handleNextDay} disabled={selectedDate >= todayKey} className={`p-2 rounded-lg transition-colors ${selectedDate >= todayKey ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-card-bg)]'}`}><ChevronRight className="w-4 h-4" /></button>
            </div>
         </div>
       </div>
@@ -149,11 +149,18 @@ export default function Nutrition() {
                 { label: 'CHẤT BÉO TỐT', sub: 'CÂN BẰNG NỘI TIẾT TỐ', percent: user.target_fat > 0 ? Math.round((todayMacros.fat / user.target_fat)*100) : 0, curr: todayMacros.fat, tgt: user.target_fat, color: '#fb923c' },
               ].map(macro => (
                 <div key={macro.label} className="bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
-                   <div className="relative w-28 h-28 flex items-center justify-center mb-6">
-                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--color-card-bg)" strokeWidth="10" />
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="10" strokeLinecap="round" strokeDasharray="263.89" strokeDashoffset={Math.max(0, 263.89 * (1 - (macro.percent > 100 ? 100 : macro.percent) / 100))} className="transition-all duration-1000 ease-out" />
-                       </svg>
+                     <div 
+                       role="progressbar" 
+                       aria-label={`Tiến độ ${macro.label}`} 
+                       aria-valuemin={0} 
+                       aria-valuemax={100} 
+                       aria-valuenow={Math.min(100, macro.percent)} 
+                       className="relative w-28 h-28 flex items-center justify-center mb-6"
+                     >
+                        <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                           <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--color-card-bg)" strokeWidth="10" />
+                           <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="10" strokeLinecap="round" strokeDasharray="263.89" strokeDashoffset={Math.max(0, 263.89 * (1 - (macro.percent > 100 ? 100 : macro.percent) / 100))} className="transition-all duration-1000 ease-out" />
+                        </svg>
                        <div className="absolute inset-0 flex flex-col items-center justify-center">
                          <span className="text-2xl font-bold">{macro.percent}%</span>
                          <span className="text-[10px] font-semibold text-[var(--color-text-muted)] mt-1">{macro.curr}g / {macro.tgt}g</span>
@@ -180,7 +187,7 @@ export default function Nutrition() {
              </div>
              <div className="text-right">
                 <div className="text-xs text-blue-400 font-bold">{percentHydration}%</div>
-                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">ĐÃ ĐẠT</div>
+                <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest">ĐÃ ĐẠT</div>
              </div>
            </CardHeader>
 
@@ -193,7 +200,7 @@ export default function Nutrition() {
                  <p className="text-xs text-[var(--color-text-muted)] mt-1">Còn lại: {remainingWater} ml</p>
 
                  <div className="mt-6 space-y-2">
-                   <div className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">GHI NHANH THỂ TÍCH NƯỚC</div>
+                   <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">GHI NHANH THỂ TÍCH NƯỚC</div>
                    <div className="flex gap-2">
                       <button onClick={() => addWater(250)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 250 ml</button>
                       <button onClick={() => addWater(500)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 500 ml</button>
@@ -220,7 +227,7 @@ export default function Nutrition() {
          </div>
          <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
             {foods.map(food => (
-              <button key={food.id} onClick={() => activeMealId && logMealItem(activeMealId, food)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
+              <button key={food.id} aria-label="Thêm món ăn" onClick={() => activeMealId && logMealItem(activeMealId, food)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
                  <div className="w-6 h-6 rounded-full bg-[var(--color-app-bg)] flex items-center justify-center group-hover:bg-[var(--color-primary)] group-hover:text-black transition-colors">
                    <Plus className="w-3 h-3" />
                  </div>
@@ -264,11 +271,11 @@ export default function Nutrition() {
                          <div>
                             <div className="flex items-center gap-2">
                                <span className="font-bold text-lg">{(index + 1).toString().padStart(2, '0')}. {meal.name}</span>
-                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${meal.status.includes('COMPLETED') || meal.status.includes('CONSUMED') ? 'bg-[var(--color-primary)] text-black' : 'bg-[var(--color-app-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]'}`}>
+                               <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${meal.status.includes('COMPLETED') || meal.status.includes('CONSUMED') ? 'bg-[var(--color-primary)] text-black' : 'bg-[var(--color-app-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]'}`}>
                                  {meal.status}
                                </span>
                             </div>
-                            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-1">{meal.scheduled_time}</p>
+                            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-1">{meal.scheduled_time}</p>
                          </div>
                       </div>
 
@@ -296,7 +303,7 @@ export default function Nutrition() {
                      <div className="w-full overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[700px]">
                           <thead>
-                            <tr className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest border-b border-[var(--color-border)]">
+                            <tr className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest border-b border-[var(--color-border)]">
                               <th className="py-3 px-6 font-semibold w-1/2">MÓN ĂN</th>
                               <th className="py-3 px-6 font-semibold text-center">CALO</th>
                               <th className="py-3 px-6 font-semibold text-center text-[var(--color-primary)]">ĐẠM</th>
@@ -317,7 +324,7 @@ export default function Nutrition() {
                                 <td className="py-3 px-6 text-center text-sm font-medium text-orange-400">{item.fat}g</td>
                                 <td className="py-3 px-6 text-right">
                                    <div className="flex items-center justify-end gap-2 text-[var(--color-text-muted)]">
-                                     <button onClick={() => removeMealItem(item.id)} className="p-1.5 hover:text-red-400 transition-colors rounded" aria-label="Xoa mon an"><Trash2 className="w-3.5 h-3.5" /></button>
+                                     <button onClick={() => removeMealItem(item.id)} className="p-1.5 hover:text-red-400 transition-colors rounded" aria-label="Xóa món ăn"><Trash2 className="w-3.5 h-3.5" /></button>
                                    </div>
                                 </td>
                               </tr>

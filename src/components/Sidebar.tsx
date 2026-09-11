@@ -53,7 +53,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="px-4 flex-1">
+      <nav aria-label="Điều hướng chính" className="px-4 flex-1">
         <ul className="space-y-1">
           {navItems.map((item) => {
             let active;

@@ -81,19 +81,19 @@ export default function Progress() {
           <div className="flex gap-6 lg:gap-12">
             {startingWeight !== null && (
               <div>
-                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mb-1">CÂN BAN ĐẦU</div>
+                <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mb-1">CÂN BAN ĐẦU</div>
                 <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white">{startingWeight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
               </div>
             )}
             <div>
-              <div className="text-[10px] text-[var(--color-primary)] uppercase tracking-widest font-semibold mb-1">HIỆN TẠI</div>
+              <div className="text-xs text-[var(--color-primary)] uppercase tracking-widest font-semibold mb-1">HIỆN TẠI</div>
               <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-[var(--color-primary)]">{user.current_weight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
               {startingWeight !== null && (
                 <div className="text-[10px] text-[var(--color-text-muted)]">{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} kg ({weightChange > 0 ? '+' : ''}{weightChangePercent.toFixed(1)}%)</div>
               )}
             </div>
             <div>
-              <div className="text-[10px] text-blue-400 uppercase tracking-widest font-semibold mb-1">MỤC TIÊU</div>
+              <div className="text-xs text-blue-400 uppercase tracking-widest font-semibold mb-1">MỤC TIÊU</div>
               <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-blue-400">{user.target_weight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
               <div className="text-[10px] text-[var(--color-text-muted)]">Còn {Math.abs(weightDelta).toFixed(1)} kg</div>
             </div>
@@ -120,7 +120,7 @@ export default function Progress() {
             </ResponsiveContainer>
           )}
           {weightLogs.length >= 2 && (
-            <div className="absolute top-2 left-4 text-[10px] text-[#60a5fa] font-bold uppercase tracking-widest">GIỚI HẠN MỤC TIÊU: {user.target_weight.toFixed(1)} KG</div>
+            <div className="absolute top-2 left-4 text-xs text-[#60a5fa] font-bold uppercase tracking-widest">GIỚI HẠN MỤC TIÊU: {user.target_weight.toFixed(1)} KG</div>
           )}
         </div>
       </Card>
@@ -189,7 +189,7 @@ export default function Progress() {
             </div>
           </CardHeader>
 
-          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-semibold uppercase tracking-widest mb-4">
+          <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] font-semibold uppercase tracking-widest mb-4">
             <div className="flex gap-4">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[var(--color-primary)] rounded"></span> Đạm ({user.target_protein}g)</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#60a5fa] rounded"></span> Tinh Bột ({user.target_carbs}g)</span>
@@ -240,7 +240,7 @@ export default function Progress() {
             {personalRecords.slice(0, 8).map((pr) => (
               <Card key={pr.exerciseId} className="flex flex-col h-full hover:border-[var(--color-primary)]/40 transition-colors">
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded border border-[var(--color-primary)]/20 uppercase tracking-wider">{pr.muscleGroup}</span>
+                  <span className="text-xs font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded border border-[var(--color-primary)]/20 uppercase tracking-wider">{pr.muscleGroup}</span>
                   <span className="text-[10px] text-[var(--color-text-muted)] flex items-center gap-1">
                     <History className="w-3 h-3" /> {formatVietnamShortDate(pr.achievedAt)}
                   </span>
@@ -250,7 +250,7 @@ export default function Progress() {
                 <div className="mt-auto">
                   <div className="flex items-end justify-between border-b border-[var(--color-border)] pb-3 mb-3">
                     <div>
-                      <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Mức PR Hiện Tại</div>
+                      <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Mức PR Hiện Tại</div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold">{pr.bestSet.weight} kg</span>
                         <span className="text-sm text-[var(--color-text-muted)]">× {pr.bestSet.reps}</span>
@@ -260,7 +260,7 @@ export default function Progress() {
                       <Trophy className="w-3 h-3" /> PR
                     </div>
                   </div>
-                  <div className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center justify-between">
+                  <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center justify-between">
                     <span>Khối lượng: {(pr.bestSet.weight * pr.bestSet.reps).toLocaleString()} kg</span>
                     <CheckCircle2 className="w-4 h-4 text-[var(--color-primary)]" />
                   </div>

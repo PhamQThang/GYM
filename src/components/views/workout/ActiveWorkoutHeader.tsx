@@ -28,7 +28,7 @@ export default function ActiveWorkoutHeader({ workoutDay, onFinish }: { workoutD
                 <Timer className="w-4 h-4 text-blue-400" />
               </div>
               <div>
-                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">TỰ ĐỘNG NGHỈ</div>
+                <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">TỰ ĐỘNG NGHỈ</div>
                 <div className="text-lg font-bold leading-none mt-0.5">{restTimerActive ? `${m}:${s}` : 'TẮT'}</div>
               </div>
               <button className="ml-2 w-8 h-8 rounded-lg bg-[var(--color-card-bg)] flex items-center justify-center hover:bg-[var(--color-card-hover)] transition-colors">

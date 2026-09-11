@@ -51,7 +51,7 @@ export default function ProgramEditor() {
                <Card key={day.id} className="overflow-hidden p-0 border-[var(--color-border)]">
                  <button 
                     onClick={() => setExpandedDay(isExpanded ? null : day.id)}
-                    className="w-full flex items-center justify-between p-6 bg-[var(--color-card-bg)] hover:bg-[var(--color-card-hover)] focus:outline-none transition-colors"
+                    className="w-full flex items-center justify-between p-6 bg-[var(--color-card-bg)] hover:bg-[var(--color-card-hover)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] focus-visible:-outline-offset-2 transition-colors"
                  >
                     <div className="flex items-center gap-4">
                        <span className="w-8 h-8 rounded-lg bg-[var(--color-app-bg)] border border-[var(--color-border)] flex items-center justify-center font-bold text-sm text-[var(--color-text-muted)]">
@@ -111,7 +111,7 @@ export default function ProgramEditor() {
                                         <span className="truncate">{ex.name}</span>
                                         {ex.is_custom && <span className="text-[8px] bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-1.5 py-0.5 rounded uppercase tracking-widest border border-[var(--color-primary)]/20 shrink-0">Tùy Chỉnh</span>}
                                      </h4>
-                                     <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] uppercase tracking-wider font-semibold">
+                                     <div className="flex flex-wrap items-center gap-3 mt-2 text-xs uppercase tracking-wider font-semibold">
                                         <span className="text-[var(--color-primary)]">{we.planned_sets} Hiệp</span>
                                         <span className="text-blue-400">{we.rep_range_min}-{we.rep_range_max} Reps</span>
                                         <span className="text-orange-400">{we.rest_seconds}s Nghỉ</span>
@@ -125,19 +125,19 @@ export default function ProgramEditor() {
                                      </h4>
                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <div>
-                                           <label className="block text-[10px] text-[var(--color-text-muted)] uppercase mb-1">Số Hiệp</label>
+                                           <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Số Hiệp</label>
                                            <input type="number" min="1" max="10" defaultValue={we.planned_sets} onChange={e => updateWorkoutExercise(we.id, { planned_sets: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
-                                           <label className="block text-[10px] text-[var(--color-text-muted)] uppercase mb-1">Reps Nhỏ Nhất</label>
+                                           <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Reps Nhỏ Nhất</label>
                                            <input type="number" min="1" defaultValue={we.rep_range_min} onChange={e => updateWorkoutExercise(we.id, { rep_range_min: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
-                                           <label className="block text-[10px] text-[var(--color-text-muted)] uppercase mb-1">Reps Lớn Nhất</label>
+                                           <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Reps Lớn Nhất</label>
                                            <input type="number" min="1" defaultValue={we.rep_range_max} onChange={e => updateWorkoutExercise(we.id, { rep_range_max: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
-                                           <label className="block text-[10px] text-[var(--color-text-muted)] uppercase mb-1">Nghỉ (Giây)</label>
+                                           <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Nghỉ (Giây)</label>
                                            <select defaultValue={we.rest_seconds} onChange={e => updateWorkoutExercise(we.id, { rest_seconds: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm">
                                              <option value="45">45s</option><option value="60">60s</option><option value="90">90s</option><option value="120">120s</option><option value="180">180s</option>
                                            </select>
@@ -202,11 +202,11 @@ function AddExerciseToDayModal({ dayId, onClose }: { dayId: string, onClose: () 
   const activeExs = exercises.filter(e => e.is_active !== false && e.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-       <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]">
-          <div className="p-6 border-b border-[var(--color-border)] flex flex-col gap-4">
-             <h3 className="text-xl font-bold">Trích Xuất Thư Viện</h3>
-             <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm bài tập..." className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] px-4 py-2.5 rounded-xl text-sm focus:border-[var(--color-primary)] outline-none" />
+      <div role="dialog" aria-labelledby="add-exercise-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in" onClick={onClose}>
+         <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[var(--color-border)] flex flex-col gap-4">
+               <h3 id="add-exercise-title" className="text-xl font-bold">Trích Xuất Thư Viện</h3>
+             <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm bài tập..." className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] px-4 py-2.5 rounded-xl text-sm focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
              {activeExs.map(ex => (

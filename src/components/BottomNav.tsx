@@ -17,7 +17,7 @@ export default function BottomNav() {
   return (
     <>
       <nav
-        aria-label="Mobile Navigation"
+        aria-label="Điều hướng phụ"
         className="
           lg:hidden
           fixed
@@ -37,7 +37,7 @@ export default function BottomNav() {
             <div className="bg-[var(--color-app-bg)]/90 backdrop-blur-md border border-[var(--color-border)] shadow-lg rounded-full px-4 py-2 flex items-center gap-3 pointer-events-auto shadow-[var(--color-primary)]/10">
               <Timer className="w-4 h-4 text-blue-400 animate-pulse" />
               <div className="font-bold text-sm tracking-wider">
-                {m}:{s} <span className="text-[10px] text-[var(--color-text-muted)] font-normal ml-1 uppercase">Đang Nghỉ</span>
+                {m}:{s} <span className="text-xs text-[var(--color-text-muted)] font-normal ml-1 uppercase">Đang Nghỉ</span>
               </div>
               <button 
                 onClick={resetRestTimer} 

@@ -98,10 +98,11 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                 </button>
                 <input
                   type="number"
+                  aria-label={`Khối lượng (kg) cho hiệp ${workoutSet.set_number}`}
                   value={localWeight}
                   onChange={handleWeightChange}
                   onBlur={handleBlur}
-                  className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors pb-1"
+                  className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors pb-1"
                   disabled={isCompleted}
                   placeholder="0"
                   min="0"
@@ -116,7 +117,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   +
                 </button>
               </div>
-              <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-1 hidden md:block">KG</span>
+              <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-1 hidden md:block">KG</span>
            </div>
 
            <span className="text-xl text-[var(--color-text-muted)] font-light hidden md:block">×</span>
@@ -134,10 +135,11 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                 </button>
                 <input
                   type="number"
+                  aria-label={`Số lần (reps) cho hiệp ${workoutSet.set_number}`}
                   value={localReps}
                   onChange={handleRepsChange}
                   onBlur={handleBlur}
-                  className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] focus:border-blue-400 focus:outline-none transition-colors pb-1"
+                  className="w-16 md:w-20 bg-transparent text-center text-xl md:text-2xl font-bold border-b border-[var(--color-border)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 transition-colors pb-1"
                   disabled={isCompleted}
                   placeholder="0"
                   min="0"
@@ -152,7 +154,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   +
                 </button>
               </div>
-              <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest mt-1 hidden md:block">REPS</span>
+              <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-1 hidden md:block">REPS</span>
            </div>
         </div>
 
@@ -166,18 +168,20 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   </div>
                )}
                <button
+                 aria-label={`Bỏ hoàn thành hiệp ${workoutSet.set_number}`}
                  onClick={() => uncompleteSet(workoutSet.id)}
                  title="Bỏ hoàn thành"
-                 className="w-11 h-11 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black rounded-xl flex items-center justify-center transition-colors group"
+                 className="w-11 h-11 md:w-12 md:h-12 bg-[var(--color-primary)]/20 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black rounded-xl flex items-center justify-center transition-colors group outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
                >
                  <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
                </button>
              </div>
           ) : (
              <button
+               aria-label={`Hoàn thành hiệp ${workoutSet.set_number}`}
                onClick={() => completeSet(workoutSet.id)}
                disabled={workoutSet.reps <= 0 || isNaN(workoutSet.reps)}
-               className="w-11 h-11 md:w-12 md:h-12 bg-[var(--color-card-bg)] hover:bg-[var(--color-primary)] text-[var(--color-text-muted)] hover:text-black rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group"
+               className="w-11 h-11 md:w-12 md:h-12 bg-[var(--color-card-bg)] hover:bg-[var(--color-primary)] text-[var(--color-text-muted)] hover:text-black rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
              >
                <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
              </button>
@@ -195,10 +199,10 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
 
         {/* Actions Desktop */}
         <div className="hidden md:flex flex-col gap-2 justify-center ml-2 border-l border-[var(--color-border)] pl-4">
-           <button onClick={() => duplicateSet(workoutSet.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-white rounded hover:bg-[var(--color-card-bg)] transition-colors" title="Sao Chép">
+           <button aria-label={`Sao chép hiệp ${workoutSet.set_number}`} onClick={() => duplicateSet(workoutSet.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-white rounded hover:bg-[var(--color-card-bg)] transition-colors outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" title="Sao Chép">
              <Copy className="w-4 h-4" />
            </button>
-           <button onClick={() => removeSet(workoutSet.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-red-400 rounded hover:bg-[var(--color-card-bg)] transition-colors" title="Xóa">
+           <button aria-label={`Xóa hiệp ${workoutSet.set_number}`} onClick={() => removeSet(workoutSet.id)} className="p-1.5 text-[var(--color-text-muted)] hover:text-red-400 rounded hover:bg-[var(--color-card-bg)] transition-colors outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" title="Xóa">
              <Trash2 className="w-4 h-4" />
            </button>
         </div>

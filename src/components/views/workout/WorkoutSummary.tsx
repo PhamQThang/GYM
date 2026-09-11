@@ -152,22 +152,22 @@ export default function WorkoutSummary({ onClose }: WorkoutSummaryProps) {
           <div className="bg-[var(--color-app-bg)] rounded-2xl p-6 border border-[var(--color-border)] flex flex-col items-center justify-center text-center">
              <TrendingUp className="w-6 h-6 text-[var(--color-primary)] mb-4" />
              <div className="text-3xl font-bold">{displaySession.total_volume.toLocaleString()}</div>
-             <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Tổng Khối Lượng (KG)</div>
+             <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Tổng Khối Lượng (KG)</div>
           </div>
           <div className="bg-[var(--color-app-bg)] rounded-2xl p-6 border border-[var(--color-border)] flex flex-col items-center justify-center text-center">
              <History className="w-6 h-6 text-blue-400 mb-4" />
              <div className="text-3xl font-bold">{durationMinutes}</div>
-             <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Thời Gian (Phút)</div>
+             <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Thời Gian (Phút)</div>
           </div>
           <div className="bg-[var(--color-app-bg)] rounded-2xl p-6 border border-[var(--color-border)] flex flex-col items-center justify-center text-center">
              <Dumbbell className="w-6 h-6 text-orange-400 mb-4" />
              <div className="text-3xl font-bold">{prCount > 0 ? `+${prCount}` : '—'}</div>
-             <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Kỷ Lục Cá Nhân</div>
+             <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Kỷ Lục Cá Nhân</div>
           </div>
           <div className="bg-[var(--color-app-bg)] rounded-2xl p-6 border border-[var(--color-border)] flex flex-col items-center justify-center text-center">
              <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-4" />
              <div className="text-3xl font-bold">{adherencePct}%</div>
-             <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Tuân Thủ</div>
+             <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest font-semibold mt-1">Tuân Thủ</div>
           </div>
        </div>
 
@@ -183,7 +183,7 @@ export default function WorkoutSummary({ onClose }: WorkoutSummaryProps) {
                       <div className="font-semibold text-lg flex items-center gap-2">
                          {b.exerciseName}
                          {b.isPR && (
-                            <span className="bg-orange-500/20 text-orange-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border border-orange-500/30">PR</span>
+                            <span className="bg-orange-500/20 text-orange-400 text-xs uppercase font-bold px-2 py-0.5 rounded-full border border-orange-500/30">PR</span>
                          )}
                       </div>
                       <div className="text-sm text-[var(--color-text-muted)] mt-1">

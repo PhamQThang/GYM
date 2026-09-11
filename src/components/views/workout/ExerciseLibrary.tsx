@@ -29,7 +29,7 @@ export default function ExerciseLibrary() {
                placeholder="Tìm kiếm bài tập..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+               className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors"
              />
           </div>
           <button 
@@ -96,17 +96,17 @@ function AddExerciseModal({ onClose, onAdd }: { onClose: () => void, onAdd: (ex:
   const [muscle, setMuscle] = useState('');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
-       <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-md p-6 shadow-2xl">
-          <h3 className="text-xl font-bold mb-6">Tạo Bài Tập Tùy Chỉnh</h3>
+      <div role="dialog" aria-labelledby="custom-exercise-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in" onClick={onClose}>
+         <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 id="custom-exercise-title" className="text-xl font-bold mb-6">Tạo Bài Tập Tùy Chỉnh</h3>
           <div className="space-y-4">
              <div>
                 <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1">TÊN BÀI TẬP</label>
-                <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none" />
+                <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" />
              </div>
              <div>
                 <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1">NHÓM CƠ CHÍNH</label>
-                <input value={muscle} onChange={e => setMuscle(e.target.value)} className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none" placeholder="VD: Ngực, Lưng, Đùi" />
+                <input value={muscle} onChange={e => setMuscle(e.target.value)} className="w-full bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]" placeholder="VD: Ngực, Lưng, Đùi" />
              </div>
           </div>
           <div className="flex justify-end gap-3 mt-8">

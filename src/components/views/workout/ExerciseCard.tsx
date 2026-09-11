@@ -63,10 +63,10 @@ export default function ExerciseCard({ workoutExercise, exercise }: ExerciseCard
 
       {/* Set Grid Header */}
       <div className="grid grid-cols-[1fr_2fr_1fr] md:grid-cols-[1fr_2fr_1fr_0.5fr] gap-4 items-center px-4 mb-2">
-         <div className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-widest pl-1">Hiệp / Lịch Sử</div>
-         <div className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-widest text-center">Tải & Số Lần</div>
-         <div className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-widest text-right md:text-center pr-2 md:pr-0 cursor-default" title="Status">Đã Xong</div>
-         <div className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-widest hidden md:block pl-5">Thao Tác</div>
+         <div className="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-widest pl-1">Hiệp / Lịch Sử</div>
+         <div className="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-widest text-center">Tải & Số Lần</div>
+         <div className="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-widest text-right md:text-center pr-2 md:pr-0 cursor-default" title="Status">Đã Xong</div>
+         <div className="text-xs text-[var(--color-text-muted)] font-bold uppercase tracking-widest hidden md:block pl-5">Thao Tác</div>
       </div>
 
       {/* Sets */}
