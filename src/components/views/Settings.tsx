@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAppStore } from '../../lib/store';
 import { exportData, validateImportPayload } from '../../lib/data-management';
 import { Save, Download, Upload, AlertTriangle, CheckCircle, RefreshCcw, UserCircle, Target, Database } from 'lucide-react';
+import { type GoalType } from '../../lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
 export default function Settings() {
@@ -15,7 +16,7 @@ export default function Settings() {
   const [localName, setLocalName] = useState(user.name);
   const [localHeight, setLocalHeight] = useState<string | number>(user.height ?? '');
   const [localTargetWeight, setLocalTargetWeight] = useState<string | number>(user.target_weight);
-  const [localGoal, setLocalGoal] = useState(user.goal_type || 'Maintain');
+  const [localGoal, setLocalGoal] = useState<GoalType>(user.goal_type ?? 'Maintenance');
 
   const [localCals, setLocalCals] = useState<string | number>(user.target_calories);
   const [localPro, setLocalPro] = useState<string | number>(user.target_protein);
@@ -36,7 +37,7 @@ export default function Settings() {
       name: localName, 
       height: h, 
       target_weight: tw, 
-      goal_type: localGoal as 'Cut' | 'Maintenance' | 'Lean Bulk'
+      goal_type: localGoal
     });
     showMsg('success', 'Đã lưu cấu hình tài khoản.');
   };
@@ -134,7 +135,7 @@ export default function Settings() {
              </div>
              <div>
                <label className="block text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-1 font-semibold">Chu Kỳ Hiện Tại</label>
-               <select value={localGoal} onChange={e => setLocalGoal(e.target.value)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] appearance-none">
+               <select value={localGoal} onChange={e => setLocalGoal(e.target.value as GoalType)} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-4 py-2 rounded-xl focus:border-[var(--color-primary)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] appearance-none">
                  <option value="Cut">Cut (Giảm Mỡ)</option>
                  <option value="Maintenance">Maintain (Duy Trì)</option>
                  <option value="Lean Bulk">Bulk (Tăng Cơ)</option>
