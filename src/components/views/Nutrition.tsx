@@ -202,8 +202,8 @@ export default function Nutrition() {
                  <div className="mt-6 space-y-2">
                    <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">GHI NHANH THỂ TÍCH NƯỚC</div>
                    <div className="flex gap-2">
-                      <button onClick={() => addWater(250)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 250 ml</button>
-                      <button onClick={() => addWater(500)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 500 ml</button>
+                      <button onClick={() => addWater(250, selectedDate)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 250 ml</button>
+                      <button onClick={() => addWater(500, selectedDate)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 500 ml</button>
                    </div>
                  </div>
               </div>
@@ -227,7 +227,7 @@ export default function Nutrition() {
          </div>
          <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
             {foods.map(food => (
-              <button key={food.id} aria-label="Thêm món ăn" onClick={() => activeMealId && logMealItem(activeMealId, food)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
+              <button key={food.id} aria-label="Thêm món ăn" onClick={() => activeMealId && logMealItem(activeMealId, food, selectedDate)} className="shrink-0 flex items-center gap-2 bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-full pl-2 pr-4 py-1.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors group">
                  <div className="w-6 h-6 rounded-full bg-[var(--color-app-bg)] flex items-center justify-center group-hover:bg-[var(--color-primary)] group-hover:text-black transition-colors">
                    <Plus className="w-3 h-3" />
                  </div>

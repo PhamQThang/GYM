@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, MealTemplate, Meal, MealItem, WeightLog } from './types';
 import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEAL_TEMPLATES, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
-import { toLocalDateKey } from './analytics';
+import { toLocalDateKey, localDateKeyToVietnamNoonIso } from './analytics';
 
 const MOCK_USER: User = {
   id: 'u-1',
@@ -69,10 +69,10 @@ export interface AppState {
   uncompleteSet: (setId: string) => void;
 
   // Phase 3 Actions
-  logMealItem: (mealId: string, food: Food) => void;
+  logMealItem: (mealId: string, food: Food, dateKey: string) => void;
   removeMealItem: (itemId: string) => void;
   completeMeal: (mealId: string) => void;
-  addWater: (ml: number) => void;
+  addWater: (ml: number, dateKey: string) => void;
   logWeight: (weight: number) => void;
 
   // Utilities
@@ -359,7 +359,12 @@ export const useAppStore = create<AppState>()(
       },
 
       // Nutrition & Progress Mutations
-      logMealItem: (mealId, food) => {
+      logMealItem: (mealId, food, dateKey) => {
+        const todayKey = toLocalDateKey(new Date());
+        const loggedAt = dateKey === todayKey
+          ? new Date().toISOString()
+          : localDateKeyToVietnamNoonIso(dateKey);
+
         set((state) => ({
           mealItems: [
             ...state.mealItems,
@@ -372,7 +377,7 @@ export const useAppStore = create<AppState>()(
               protein: food.protein_per_serving,
               carbs: food.carbs_per_serving,
               fat: food.fat_per_serving,
-              logged_at: new Date().toISOString()
+              logged_at: loggedAt
             }
           ]
         }));
@@ -386,15 +391,12 @@ export const useAppStore = create<AppState>()(
         mealItems: state.mealItems.filter(mealItem => mealItem.id !== itemId)
       })),
 
-      addWater: (ml) => set((state) => {
-        const todayKey = toLocalDateKey(new Date());
-        return {
-          waterLogs: {
-            ...state.waterLogs,
-            [todayKey]: (state.waterLogs[todayKey] || 0) + ml
-          }
-        };
-      }),
+      addWater: (ml, dateKey) => set((state) => ({
+        waterLogs: {
+          ...state.waterLogs,
+          [dateKey]: (state.waterLogs[dateKey] || 0) + ml
+        }
+      })),
 
       logWeight: (weight) => set((state) => {
         const dateKey = toLocalDateKey(new Date());

@@ -27,6 +27,16 @@ export function toLocalDateKey(d: Date | string): string {
   return formatter.format(date);
 }
 
+/**
+ * Converts a YYYY-MM-DD local date key to an ISO string representing 12:00 PM (noon) in Asia/Ho_Chi_Minh.
+ * Vietnam is fixed at UTC+7. Noon (12:00) local is 05:00 UTC.
+ */
+export function localDateKeyToVietnamNoonIso(dateKey: string): string {
+  const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return new Date().toISOString(); 
+  return `${match[1]}-${match[2]}-${match[3]}T05:00:00.000Z`;
+}
+
 // ─────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────
