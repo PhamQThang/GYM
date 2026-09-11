@@ -12,7 +12,6 @@ export function exportData() {
   const options = useAppStore.persist.getOptions();
   const partialize = options?.partialize;
   const serializedState = partialize ? partialize(state) : state;
-  
   const payload = {
     app: APP_IDENTIFIER,
     schema_version: SCHEMA_VERSION,
@@ -22,11 +21,34 @@ export function exportData() {
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
   const dateStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
   const a = document.createElement('a');
   a.href = url;
   a.download = `PULSE_backup_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function exportWeightCSV(logs: { date: string, weight: number }[]) {
+  if (!logs.length) return;
+  const header = "Date,Weight (kg)\n";
+  const rows = logs.map(l => {
+    const dateE = `"${l.date.replace(/"/g, '""')}"`;
+    const weightE = `"${String(l.weight).replace(/"/g, '""')}"`;
+    return `${dateE},${weightE}`;
+  }).join("\n");
+  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const yList = String(d.getFullYear());
+  const mList = String(d.getMonth() + 1).padStart(2, '0');
+  const dList = String(d.getDate()).padStart(2, '0');
+  const dateStr = `${yList}-${mList}-${dList}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PULSE_Weight_${dateStr}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -39,20 +61,16 @@ const isValidNonNegative = (val: any) => typeof val === 'number' && Number.isFin
 export function validateImportPayload(jsonText: string): { success: boolean; data?: Partial<AppState>; error?: string } {
   try {
     const raw = JSON.parse(jsonText);
-    
     // Envelope validation
     if (raw.app !== APP_IDENTIFIER) return { success: false, error: 'Tệp sao lưu không hợp lệ hoặc không thuộc hệ thống PULSE.' };
     if (raw.schema_version !== SCHEMA_VERSION) return { success: false, error: 'Phiên bản sao lưu không được hỗ trợ. Vui lòng cập nhật ứng dụng.' };
     if (!raw.data || typeof raw.data !== 'object') return { success: false, error: 'Tệp sao lưu bị hỏng (thiếu trường dữ liệu).' };
 
     const d = raw.data;
-    
     // Structure Validation
     const requiredArrays = [
-      'exercises', 'programs', 'workoutDays', 'workoutExercises', 
-      'workoutHistory', 'setHistory', 'foods', 'meals', 'mealItems', 'weightLogs'
+      'exercises', 'programs', 'workoutDays', 'workoutExercises',      'workoutHistory', 'setHistory', 'foods', 'meals', 'mealItems', 'weightLogs'
     ];
-    
     for (const arrName of requiredArrays) {
       if (!Array.isArray(d[arrName])) return { success: false, error: `Tệp sao lưu bị hỏng (thiếu danh sách ${arrName}).` };
     }
@@ -64,7 +82,6 @@ export function validateImportPayload(jsonText: string): { success: boolean; dat
     if (!isValidNonNegative(d.user.target_calories)) return { success: false, error: 'Mục tiêu Calories không hợp lệ.' };
 
     const programsMap = new Set(d.programs.map((p: any) => p.id));
-    
     const workoutDaysMap = new Map<string, WorkoutDay>();
     d.workoutDays.forEach((wd: WorkoutDay) => {
       if (!programsMap.has(wd.program_id)) throw new Error(`WorkoutDay reference broken. Missing Program: ${wd.program_id}`);
@@ -98,7 +115,6 @@ export function validateImportPayload(jsonText: string): { success: boolean; dat
        if (!mealsMap.has(item.meal_id)) throw new Error(`Meal reference broken in MealItems.`);
        if (!isValidNonNegative(item.calories)) throw new Error(`Invalid numeric calories found in MealItems.`);
     }
-    
     // Validate weight logs
     for (const wl of d.weightLogs as WeightLog[]) {
        if (wl.user_id !== d.user.id) throw new Error(`WeightLog reference broken. Mismatching User ID.`);
@@ -107,7 +123,6 @@ export function validateImportPayload(jsonText: string): { success: boolean; dat
 
     // If all tests pass, construction is successful
     return { success: true, data: d };
-    
   } catch (error: any) {
     return { success: false, error: error.message || 'Xảy ra lỗi không xác định khi xác thực tệp JSON.' };
   }

@@ -30,9 +30,9 @@
 - **Overview → Log Weigh-in**
 - Input daily fasted weight (e.g., 65.0 kg).
 - **WeightLog** entry created.
-- **Progress update**: The 7-day rolling harmonic mean and trajectory forecast re-calculates automatically in Progress tab.
+- **Progress update**: The 7-day rolling arithmetic mean re-calculates automatically in Progress tab.
 
 ## 5. Analytics & Progress
 - **Progress Screen** entered from Sidebar.
 - User reviews long-term analytics: Weight/Caloric totals, Workout Volume (Tonnage), and PR analytics.
-- Values are derived across varying timeframes (7 Days, 30 Days, 3 Months, etc.).
+- Values are derived across the available history.

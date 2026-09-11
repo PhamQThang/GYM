@@ -4,7 +4,7 @@
  * No UI, no side-effects — all functions are deterministic given the same inputs.
  */
 
-import { WorkoutSession, WorkoutSet, WorkoutExercise, Exercise } from './types';
+import { WorkoutSession, WorkoutSet, WorkoutExercise, Exercise, WeightLog, MealItem, User } from './types';
 
 // ─────────────────────────────────────────────────
 // LOCAL DATE HELPERS
@@ -110,14 +110,21 @@ function weekRangeLabel(weekKey: string, sessions: WorkoutSession[]): string {
     const d = new Date(s.start_time);
     return isoWeekKey(d) === weekKey;
   });
-  if (sessionsInWeek.length === 0) return weekKey;
+  const sampleSession = sessionsInWeek[0];
+  if (!sampleSession) return weekKey;
 
-  const dates = sessionsInWeek.map(s => new Date(s.start_time));
-  const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-  const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+  const sampleDate = new Date(sampleSession.start_time);
+  const day = sampleDate.getDay();
+  const diffToMonday = sampleDate.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(sampleDate);
+  monday.setDate(diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
 
   const fmt = (d: Date) => d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }).replace('/', ' Th');
-  return `${fmt(minDate)} – ${fmt(maxDate)}`;
+  return `${fmt(monday)} – ${fmt(sunday)}`;
 }
 
 /**
@@ -160,11 +167,32 @@ export function calculateWeeklyVolume(
   const volumes = recentKeys.map(k => weekMap.get(k)!.volume);
   const maxVol = Math.max(...volumes, 1);
 
-  return recentKeys.map((weekKey, idx) => {
+  return recentKeys.map((weekKey) => {
     const data = weekMap.get(weekKey)!;
-    const prevKey = recentKeys[idx - 1];
-    const prevVol = (idx > 0 && prevKey) ? (weekMap.get(prevKey)?.volume ?? 0) : 0;
-    const changeNum = idx > 0 && prevVol > 0 ? ((data.volume - prevVol) / prevVol) * 100 : null;
+    // Find adjacent previous calendar week
+    const anySessionId = Array.from(data.sessions)[0];
+    const session = sessionMap.get(anySessionId as string);
+    let prevVol: number | null = null;
+    if (session) {
+      const d = new Date(session.start_time);
+      d.setDate(d.getDate() - 7);
+      const prevWeekKeyNum = isoWeekKey(d);
+      const prevData = weekMap.get(prevWeekKeyNum);
+      if (prevData !== undefined) {
+        prevVol = prevData.volume;
+      }
+    }
+
+    let changeNum: number | null = null;
+    if (prevVol !== null) {
+      if (prevVol > 0) {
+        changeNum = ((data.volume - prevVol) / prevVol) * 100;
+      } else if (prevVol === 0 && data.volume > 0) {
+        changeNum = 100;
+      } else if (prevVol === 0 && data.volume === 0) {
+        changeNum = 0;
+      }
+    }
 
     return {
       weekLabel: weekRangeLabel(weekKey, completed),
@@ -224,7 +252,6 @@ export function derivePRsInSession(
   for (const s of setHistory) {
     if (s.status !== 'COMPLETED') continue;
     if (currentSessionId && s.session_id === currentSessionId) continue;
-    
     const we = weMap.get(s.workout_exercise_id);
     if (!we) continue;
     const exId = we.exercise_id;
@@ -351,7 +378,6 @@ export function getVietnameseGreeting(): string {
   return 'Chào buổi tối';
 }
 
-import { WeightLog } from './types';
 
 /**
  * Returns the weight delta over the last 7 days from WeightLog data.
@@ -407,6 +433,52 @@ export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
   return Math.round((latestItem.log.weight - bestItem.log.weight) * 10) / 10;
 }
 
+/**
+ * Calculates a 7-day arithmetic moving average for weight logs.
+ * Includes available observations from D-6 to D using local calendar boundaries.
+ * Does not mutate source arrays.
+ */
+export function calculateWeightMovingAverage(logs: WeightLog[]): (WeightLog & { ma7: number | null })[] {
+  // Sort logs by date to ensure proper processing
+  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+
+  return sorted.map((log) => {
+    // Parse YYYY-MM-DD directly as local date
+    const dMatch = log.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    let currentMs = 0;
+    if (dMatch) {
+      currentMs = new Date(parseInt(dMatch[1] || '0', 10), parseInt(dMatch[2] || '0', 10) - 1, parseInt(dMatch[3] || '0', 10)).getTime();
+    } else {
+      const d = new Date(log.date);
+      d.setHours(0, 0, 0, 0);
+      currentMs = d.getTime();
+    }
+
+    const windowLogs = sorted.filter((wLog) => {
+      const match = wLog.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      let wMs = 0;
+      if (match) {
+        wMs = new Date(parseInt(match[1] || '0', 10), parseInt(match[2] || '0', 10) - 1, parseInt(match[3] || '0', 10)).getTime();
+      } else {
+        const wd = new Date(wLog.date);
+        wd.setHours(0, 0, 0, 0);
+        wMs = wd.getTime();
+      }
+      const diffDays = Math.round((currentMs - wMs) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 6;
+    });
+
+    if (windowLogs.length === 0) {
+      return { ...log, ma7: null };
+    }
+
+    const sum = windowLogs.reduce((acc, curr) => acc + curr.weight, 0);
+    const ma7 = sum / windowLogs.length;
+
+    return { ...log, ma7: Math.round(ma7 * 10) / 10 };
+  });
+}
+
 /** Duration in minutes between two ISO strings */
 export function durationMinutes(startIso: string, endIso?: string): number {
   if (!endIso) return 0;
@@ -417,7 +489,6 @@ export function durationMinutes(startIso: string, endIso?: string): number {
 // NUTRITION AND MACRO AGGREGATION
 // ─────────────────────────────────────────────────
 
-import { MealItem, User } from './types';
 
 export interface DailyNutrition {
   day: string; // "Hôm Nay" or "28 Th10"
@@ -498,7 +569,6 @@ export interface CalorieAdherence {
 export function calculateCalorieAdherence(mealItems: MealItem[], user: User): CalorieAdherence {
   const history = calculateNutritionHistory(mealItems);
   const today = history[history.length - 1] ?? { calories: 0, pro: 0, carb: 0, fat: 0, day: '', dateKey: '', active: false };
-  
   const target = Number(user.target_calories);
   if (isNaN(target) || !isFinite(target) || target <= 0) {
     return {

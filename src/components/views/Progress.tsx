@@ -1,8 +1,9 @@
 import { Download, Plus, Flame, Dumbbell, Activity, CheckCircle2, History, Trophy } from 'lucide-react';
 import { Card, CardHeader } from '../ui/Card';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useAppStore } from '../../lib/store';
-import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate, calculateNutritionHistory } from '../../lib/analytics';
+import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate, calculateNutritionHistory, calculateWeightMovingAverage } from '../../lib/analytics';
+import { exportWeightCSV } from '../../lib/data-management';
 
 
 
@@ -21,6 +22,9 @@ export default function Progress() {
   const weightChange = startingWeight !== null ? user.current_weight - startingWeight : 0;
   const weightChangePercent = startingWeight ? (weightChange / startingWeight) * 100 : 0;
 
+  // ── Weight Moving Average (real data) ──
+  const weightDataWithMA = calculateWeightMovingAverage(weightLogs);
+
   // ── Weekly Volume (real data from completed sessions + sets) ──
   const weeklyVolumes = calculateWeeklyVolume(workoutHistory, setHistory);
 
@@ -29,6 +33,8 @@ export default function Progress() {
 
   // ── 7-Day Nutrition History ──
   const nutritionHistory = calculateNutritionHistory(mealItems);
+
+  const lastWeeklyVolume = weeklyVolumes.length > 0 ? weeklyVolumes[weeklyVolumes.length - 1] : null;
 
   const handleLogWeight = () => {
     const val = window.prompt('Nhập cân nặng mới (kg):', user.current_weight.toString());
@@ -52,7 +58,7 @@ export default function Progress() {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-app-bg)] text-white border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
+          <button onClick={() => exportWeightCSV(weightLogs)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-app-bg)] text-white border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
             <Download className="w-4 h-4" /> Xuất File CSV
           </button>
           <button onClick={handleLogWeight} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-dark)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
@@ -69,7 +75,7 @@ export default function Progress() {
               <span className="w-2 h-2 rounded-full bg-[var(--color-primary)]"></span>
               <h3 className="text-xl font-bold">Biểu Đồ Phát Triển Cân Nặng</h3>
             </div>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">Cân trọng lượng cơ thể hàng ngày với trung bình động 7 ngày</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">Cân trọng lượng cơ thể hàng ngày & trung bình 7 ngày</p>
           </div>
 
           <div className="flex gap-6 lg:gap-12">
@@ -102,16 +108,20 @@ export default function Progress() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weightLogs} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+              <LineChart data={weightDataWithMA} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={formatVietnamShortDate} tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} dy={10} />
-                <YAxis domain={['auto', 'auto']} hide={true} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--color-card-bg)', borderColor: 'var(--color-border)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: 'var(--color-primary)' }} />
+                <YAxis domain={[(dataMin: number) => Math.min(dataMin, user.target_weight) - 1, (dataMax: number) => Math.max(dataMax, user.target_weight) + 1]} hide={true} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--color-card-bg)', borderColor: 'var(--color-border)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: 'white' }} />
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <Line type="monotone" dataKey="weight" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-primary)', strokeWidth: 2, stroke: 'var(--color-panel-bg)' }} activeDot={{ r: 6 }} />
+                <ReferenceLine y={user.target_weight} stroke="#60a5fa" strokeDasharray="3 3" strokeWidth={1.5} strokeOpacity={0.8} />
+                <Line name="Cân nặng" type="stepAfter" dataKey="weight" stroke="var(--color-border)" strokeWidth={2} dot={{ r: 4, fill: 'var(--color-border)', strokeWidth: 2, stroke: 'var(--color-panel-bg)' }} activeDot={{ r: 6 }} />
+                <Line name="Trung bình 7 ngày" type="monotone" dataKey="ma7" stroke="var(--color-primary)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
-          <div className="absolute top-[10%] left-0 text-[10px] text-blue-400 font-bold uppercase tracking-widest">GIỚI HẠN MỤC TIÊU: {user.target_weight.toFixed(1)} KG</div>
+          {weightLogs.length >= 2 && (
+            <div className="absolute top-2 left-4 text-[10px] text-[#60a5fa] font-bold uppercase tracking-widest">GIỚI HẠN MỤC TIÊU: {user.target_weight.toFixed(1)} KG</div>
+          )}
         </div>
       </Card>
 
@@ -129,7 +139,7 @@ export default function Progress() {
             {weeklyVolumes.length > 1 && (
               <div className="bg-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/30 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold shrink-0">
                 <Activity className="w-3 h-3" />
-                {weeklyVolumes[weeklyVolumes.length - 1]?.change ?? 'Tuần Đầu'}
+                {lastWeeklyVolume?.change ? lastWeeklyVolume.change : (weeklyVolumes.length <= 1 ? 'Tuần Đầu' : '—')}
               </div>
             )}
           </CardHeader>
@@ -174,7 +184,7 @@ export default function Progress() {
                 <h3 className="text-lg font-bold">Lịch Sử Dinh Dưỡng</h3>
               </div>
               <p className="text-[10px] text-[var(--color-text-muted)]">
-                Theo dõi Macro trong 7 ngày qua (Dữ liệu cũ tự động gộp vào hôm nay)
+                Theo dõi Macro trong 7 ngày qua (Dữ liệu chưa có thời điểm ghi nhận sẽ không được tính)
               </p>
             </div>
           </CardHeader>
