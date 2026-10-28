@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules', 'dist', 'build_output', '.vercel', 'test.ts', '*.cjs', '*.js']
+    ignores: ['node_modules', 'dist', 'build_output', '.vercel', 'test.ts', '*.cjs', '*.js', 'scripts/gen-db-types.mjs']
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
