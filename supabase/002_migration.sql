@@ -1,4 +1,4 @@
-﻿-- Idempotent supplemental migration for the legacy app schema.
+-- Idempotent supplemental migration for the legacy app schema.
 
 create table if not exists public.daily_water (
   client_id uuid not null references public.clients(id) on delete cascade,
@@ -75,18 +75,22 @@ where c.pt_id = c.user_id
 -- Stable IDs preserve references to the old local exercise IDs.
 insert into public.exercises (id, pt_id, name, primary_muscle, secondary_muscles, equipment)
 values
-  ('00000000-0000-4000-8000-000000000001', null, 'D?y Ng?c Ngang T? D?n', 'Ng?c Gi?a', array['Vai Tru?c', 'Tay Sau']::text[], 'Barbell'),
-  ('00000000-0000-4000-8000-000000000002', null, 'D?y Ng?c D?c L�n (M�y Smith)', 'Ng?c Tr�n', array['Vai Tru?c']::text[], 'Machine'),
-  ('00000000-0000-4000-8000-000000000003', null, '�p Ng?c M�y', 'Ng?c Trong', array[]::text[], 'Machine'),
-  ('00000000-0000-4000-8000-000000000004', null, 'K�o X� R?ng Tay', 'X�', array['B?p Tay Tru?c']::text[], 'Cable'),
-  ('00000000-0000-4000-8000-000000000005', null, 'Ng?i K�o C�p T?p Lung', 'Lung Gi?a', array['C?u Vai', 'X�']::text[], 'Cable'),
-  ('00000000-0000-4000-8000-000000000006', null, 'Cu?n C�p C?m Ng?a', 'B?p Tay Tru?c', array['C?ng Tay']::text[], 'Cable'),
-  ('00000000-0000-4000-8000-000000000007', null, 'K�o C�p Qua D?u', 'Tay Sau', array[]::text[], 'Cable'),
-  ('00000000-0000-4000-8000-000000000008', null, 'G�nh T? (Squat)', 'D�i Tru?c', array['M�ng', 'Lung Du?i']::text[], 'Barbell'),
-  ('00000000-0000-4000-8000-000000000009', null, 'M�y D?p D�i (Leg Press)', 'D�i Tru?c', array['M�ng']::text[], 'Machine'),
-  ('00000000-0000-4000-8000-000000000010', null, 'Ng?i Cu?n D�i Sau', 'D�i Sau', array[]::text[], 'Machine'),
-  ('00000000-0000-4000-8000-000000000011', null, 'Romanian Deadlift (RDL)', 'D�i Sau', array['M�ng', 'Lung Du?i']::text[], 'Barbell'),
-  ('00000000-0000-4000-8000-000000000012', null, 'D?y T? Don Qua D?u', 'Vai Tru?c', array['Tay Sau']::text[], 'Dumbbell'),
-  ('00000000-0000-4000-8000-000000000013', null, 'K�o C�p Dang Vai', 'Vai Gi?a', array[]::text[], 'Cable'),
-  ('00000000-0000-4000-8000-000000000014', null, 'Nh�n G�t (Calf Raise)', 'B?p Ch�n', array[]::text[], 'Machine')
-on conflict (id) do nothing;
+  ('00000000-0000-4000-8000-000000000001', null, 'Đẩy Ngực Ngang Tạ Đòn', 'Ngực Giữa', array['Vai Trước', 'Tay Sau']::text[], 'Barbell'),
+  ('00000000-0000-4000-8000-000000000002', null, 'Đẩy Ngực Dốc Lên (Máy Smith)', 'Ngực Trên', array['Vai Trước']::text[], 'Machine'),
+  ('00000000-0000-4000-8000-000000000003', null, 'Ép Ngực Máy', 'Ngực Trong', array[]::text[], 'Machine'),
+  ('00000000-0000-4000-8000-000000000004', null, 'Kéo Xô Rộng Tay', 'Xô', array['Bắp Tay Trước']::text[], 'Cable'),
+  ('00000000-0000-4000-8000-000000000005', null, 'Ngồi Kéo Cáp Tập Lưng', 'Lưng Giữa', array['Cầu Vai', 'Xô']::text[], 'Cable'),
+  ('00000000-0000-4000-8000-000000000006', null, 'Cuốn Cáp Cầm Ngửa', 'Bắp Tay Trước', array['Cẳng Tay']::text[], 'Cable'),
+  ('00000000-0000-4000-8000-000000000007', null, 'Kéo Cáp Qua Đầu', 'Tay Sau', array[]::text[], 'Cable'),
+  ('00000000-0000-4000-8000-000000000008', null, 'Gánh Tạ (Squat)', 'Đùi Trước', array['Mông', 'Lưng Dưới']::text[], 'Barbell'),
+  ('00000000-0000-4000-8000-000000000009', null, 'Máy Đạp Đùi (Leg Press)', 'Đùi Trước', array['Mông']::text[], 'Machine'),
+  ('00000000-0000-4000-8000-000000000010', null, 'Ngồi Cuốn Đùi Sau', 'Đùi Sau', array[]::text[], 'Machine'),
+  ('00000000-0000-4000-8000-000000000011', null, 'Romanian Deadlift (RDL)', 'Đùi Sau', array['Mông', 'Lưng Dưới']::text[], 'Barbell'),
+  ('00000000-0000-4000-8000-000000000012', null, 'Đẩy Tạ Đơn Qua Đầu', 'Vai Trước', array['Tay Sau']::text[], 'Dumbbell'),
+  ('00000000-0000-4000-8000-000000000013', null, 'Kéo Cáp Dang Vai', 'Vai Giữa', array[]::text[], 'Cable'),
+  ('00000000-0000-4000-8000-000000000014', null, 'Nhón Gót (Calf Raise)', 'Bắp Chân', array[]::text[], 'Machine')
+on conflict (id) do update set
+  name = excluded.name,
+  primary_muscle = excluded.primary_muscle,
+  secondary_muscles = excluded.secondary_muscles,
+  equipment = excluded.equipment;
