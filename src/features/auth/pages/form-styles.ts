@@ -1,0 +1,3 @@
+export const inputClass = 'w-full min-h-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-app-bg)] px-4 text-base text-[var(--color-text-main)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50';
+export const buttonClass = 'w-full min-h-12 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-black transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] disabled:opacity-50 disabled:cursor-not-allowed';
+export const secondaryButtonClass = 'w-full min-h-12 rounded-xl border border-[var(--color-border)] px-4 py-3 font-semibold text-[var(--color-text-main)] hover:bg-[var(--color-card-bg)] disabled:opacity-50';

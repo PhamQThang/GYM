@@ -36,9 +36,13 @@ A personal gym, workout, nutrition, and progress tracking dashboard designed for
 
 ## Getting Started
 
+Use Node.js 22.13 or newer in the 22.x line (`.nvmrc`), matching CI.
+The supported runtime range is declared in `package.json`; npm and
+`package-lock.json` are the dependency source of truth.
+
 1. **Install Dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 2. **Run the Development Server**
@@ -48,14 +52,49 @@ A personal gym, workout, nutrition, and progress tracking dashboard designed for
 
 3. **Validation Commands**
    ```bash
-   npm run lint  # Type Checking
+   npm run lint  # ESLint
+   npm run typecheck
+   npm test
    npm run build # Build the production application
    ```
 
 ## Known Limitations
 
-- The application is currently completely client-side. Local data storage holds the operational state, so there is currently no backend database, cloud persistence, nor authentication. Data cannot sync across separate devices securely right now.
+- The default build runs the local tracker. The Supabase mode supports PT/client sign-in, creating student profiles, verified invitations, and a read-only overview for linked students. Cloud workout and nutrition logging are pending.
 - Features like social progress sharing or server-managed routine discovering are out-of-scope for the early phase MVP.
+
+## Local data and P0 development
+
+- Persistence is version 4. Hydration migrates versions 0–3 while preserving existing
+  catalog customization flags. Reset clears the active workout and rest timer.
+- JSON backups include foods, workout drafts and timer state. Imports validate
+  references, ownership, dates and numeric values and cannot replace store actions.
+  Legacy v1 backups missing foods recover the seed catalog and retain meal snapshots;
+  custom food definitions absent from the original export cannot be reconstructed.
+  Missing legacy catalog metadata is recovered conservatively with a warning.
+- Migration 003 hardens profile and program permissions. Migration 004 adds verified invitations and keeps existing account links.
+- CI includes PostgreSQL permission regression tests using minimal Auth/Storage
+  stubs. These do not replace Supabase Auth, API and storage integration tests.
+
+To run the Supabase mode against a separate local stack on Windows, start Docker and run:
+
+```powershell
+powershell -NoProfile -File scripts/start-local-auth.ps1
+```
+
+Add `-SmokeTest` to verify invitation acceptance and account isolation with disposable accounts.
+The script uses a loopback API and applies the repository migrations to its local stack.
+The account overview reads the assigned program, workout history summary, nutrition
+targets, latest weight, active package and upcoming PT session from Supabase.
+
+For Google sign-in on hosted Supabase, create a Google OAuth Web client. Add the
+hosted Supabase `/auth/v1/callback` URL as a Google authorized redirect URI.
+Enable Google in Supabase Auth and enter the OAuth client ID and secret there.
+Add `http://127.0.0.1:3002/auth/callback` to the Supabase redirect allowlist for
+the local web app connected to the hosted database. Add the equivalent URL for
+any deployed app. The **Tiếp tục với Google** button opens Google's account
+chooser. When started from the invitation page, Google sign-in returns learners
+to that invitation in the same tab to confirm acceptance.
 
 ## Roadmap
 

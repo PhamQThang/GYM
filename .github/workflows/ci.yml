@@ -19,3 +19,39 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  database-security:
+    runs-on: ubuntu-latest
+    # Disposable PostgreSQL with platform stubs; this is not a Supabase API test.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test clean database
+        run: |
+          createdb gym_clean
+          psql -X -v ON_ERROR_STOP=1 -d gym_clean -f supabase/tests/postgres_shim.sql
+          psql -X -v ON_ERROR_STOP=1 -d gym_clean -f supabase/001_schema.sql -f supabase/002_migration.sql -f supabase/003_security_hardening.sql -f supabase/tests/003_security_hardening.sql
+      - name: Test upgrade with existing fixtures
+        run: |
+          createdb gym_upgrade
+          psql -X -v ON_ERROR_STOP=1 -d gym_upgrade -f supabase/tests/postgres_shim.sql
+          psql -X -v ON_ERROR_STOP=1 -d gym_upgrade -f supabase/tests/004_upgrade.sql
+      - name: Verify invitation issue, revocation and acceptance
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -d gym_clean -f supabase/004_verified_invitations.sql -f supabase/tests/004_verified_invitations.sql
