@@ -41,6 +41,7 @@ it('scopes each repository read and maps absent rows to empty values without rep
   const { signal } = new AbortController();
   await expect(readClientOverview(api, scope, signal)).resolves.toEqual({
     name: 'Test', nutrition: { calories: null, protein: 0, carbs: null, fat: null },
+    goal: null, targetWeight: null,
     program: null, lastWorkout: null, weight: null, packageName: null, nextSessionAt: null,
   });
   for (const [table, query] of queries) {

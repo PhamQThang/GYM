@@ -6,6 +6,7 @@ import ExerciseCard from './workout/ExerciseCard';
 import WorkoutSummary from './workout/WorkoutSummary';
 import ProgramEditor from './workout/ProgramEditor';
 import ExerciseLibrary from './workout/ExerciseLibrary';
+import { WorkoutPage } from './workout/WorkoutPage';
 import { ROUTES } from '../../lib/navigation';
 import { useState } from 'react';
 
@@ -51,7 +52,7 @@ export default function Workout() {
 
   if (!activeSession) {
     return (
-      <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+      <WorkoutPage>
          {/* Sub-Navigation Hub */}
          <div className="flex bg-[var(--color-panel-bg)] p-1 rounded-xl border border-[var(--color-border)] w-fit mx-auto mb-8">
             <button onClick={() => navigate(ROUTES.workout)} className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${subTab === 'active' ? 'bg-[var(--color-primary)] text-black shadow-md' : 'text-[var(--color-text-muted)] hover:text-white'}`}>Bắt Đầu</button>
@@ -106,7 +107,7 @@ export default function Workout() {
 
          {subTab === 'program' && <ProgramEditor />}
          {subTab === 'library' && <ExerciseLibrary />}
-      </div>
+      </WorkoutPage>
     );
   }
 
@@ -118,7 +119,7 @@ export default function Workout() {
     .sort((a, b) => a.order_index - b.order_index);
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <WorkoutPage>
       <ActiveWorkoutHeader workoutDay={activeDay} onFinish={handleFinishRequest} />
 
       {showConfirmEnd && (
@@ -161,6 +162,6 @@ export default function Workout() {
           );
         })}
       </div>
-    </div>
+    </WorkoutPage>
   );
 }

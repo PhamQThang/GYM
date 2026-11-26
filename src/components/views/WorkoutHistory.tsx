@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import { History, ChevronRight, Dumbbell, Timer, TrendingUp, BarChart3, Trophy } from 'lucide-react';
-import { useAppStore } from '../../lib/store';
+import type { WorkoutHistoryData } from '../../lib/types';
 import { durationMinutes, formatVietnamDate, derivePRsInSession } from '../../lib/analytics';
 import { Card } from '../ui/Card';
 import WorkoutDetail from './workout/WorkoutDetail';
 
-export default function WorkoutHistory() {
-  const workoutHistory = useAppStore((s) => s.workoutHistory);
-  const setHistory = useAppStore((s) => s.setHistory);
-  const workoutDays = useAppStore((s) => s.workoutDays);
-  const workoutExercises = useAppStore((s) => s.workoutExercises);
-  const exercises = useAppStore((s) => s.exercises);
+export default function WorkoutHistory({ workoutHistory, setHistory, workoutDays, workoutExercises, exercises }: WorkoutHistoryData) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const completed = workoutHistory

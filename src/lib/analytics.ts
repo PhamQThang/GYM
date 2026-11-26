@@ -239,7 +239,7 @@ export function e1RM(weight: number, reps: number): number {
 export function derivePRsInSession(
   activeSets: WorkoutSet[],
   setHistory: WorkoutSet[],
-  workoutExercises: WorkoutExercise[]
+  workoutExercises: Pick<WorkoutExercise, 'id' | 'exercise_id'>[]
 ): Set<string> {
   const prIds = new Set<string>();
   const weMap = new Map(workoutExercises.map(we => [we.id, we]));
@@ -307,8 +307,8 @@ export function derivePRsInSession(
 export function calculatePersonalRecords(
   setHistory: WorkoutSet[],
   workoutSessions: WorkoutSession[],
-  workoutExercises: WorkoutExercise[],
-  exercises: Exercise[]
+  workoutExercises: Pick<WorkoutExercise, 'id' | 'exercise_id'>[],
+  exercises: Pick<Exercise, 'id' | 'name' | 'primary_muscle'>[]
 ): PersonalRecord[] {
   const prMap = new Map<string, { bestSet: WorkoutSet; sessionId: string; e1rm: number }>();
 
@@ -408,6 +408,8 @@ export function calculateWeeklyWeightDelta(logs: WeightLog[]): number | null {
       const viMatch = dateStr.match(/^(\d{1,2})\s+Th(\d{1,2})$/i);
       if (viMatch && viMatch[1] && viMatch[2]) {
         d = new Date(new Date().getFullYear(), parseInt(viMatch[2], 10) - 1, parseInt(viMatch[1], 10));
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        d = new Date(dateStr);
       } else {
         d = new Date(`${log.date} ${new Date().getFullYear()}`);
       }

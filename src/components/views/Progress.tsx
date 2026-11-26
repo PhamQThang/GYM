@@ -2,28 +2,36 @@ import { useState } from 'react';
 import { Download, Plus, Flame, Dumbbell, Activity, CheckCircle2, History, Trophy } from 'lucide-react';
 import { Card, CardHeader } from '../ui/Card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
-import { useAppStore } from '../../lib/store';
 import { calculateWeeklyVolume, calculatePersonalRecords, formatVietnamShortDate, calculateNutritionHistory, calculateWeightMovingAverage } from '../../lib/analytics';
-import { exportWeightCSV } from '../../lib/data-management';
 import { WeightModal } from '../ui/WeightModal';
 
 
 
-export default function Progress() {
-  const [showWeightModal, setShowWeightModal] = useState(false);
-  const user = useAppStore((s) => s.user);
-  const weightLogs = useAppStore((s) => s.weightLogs);
-  const mealItems = useAppStore((s) => s.mealItems);
-  const logWeight = useAppStore((s) => s.logWeight);
-  const workoutHistory = useAppStore((s) => s.workoutHistory);
-  const setHistory = useAppStore((s) => s.setHistory);
-  const workoutExercises = useAppStore((s) => s.workoutExercises);
-  const exercises = useAppStore((s) => s.exercises);
+import type { MealItem, WeightLog, WorkoutHistoryData } from '../../lib/types';
 
-  const weightDelta = user.target_weight - user.current_weight;
-  const startingWeight = weightLogs[0]?.weight ?? null;
-  const weightChange = startingWeight !== null ? user.current_weight - startingWeight : 0;
-  const weightChangePercent = startingWeight ? (weightChange / startingWeight) * 100 : 0;
+type ProgressProps = Omit<WorkoutHistoryData, 'workoutDays'> & {
+  user: {
+    current_weight: number | null; target_weight: number | null;
+    target_protein: number | null; target_carbs: number | null; target_fat: number | null;
+  };
+  weightLogs: WeightLog[];
+  startWeight?: number | null;
+  mealItems: MealItem[];
+  onLogWeight?: (weight: number, submissionId: string) => void | Promise<void>;
+  cloudWeightRange?: boolean;
+  onExport?: () => void;
+};
+
+export default function Progress({
+  user, weightLogs, startWeight = weightLogs[0]?.weight ?? null, mealItems, workoutHistory, setHistory,
+  workoutExercises, exercises, onLogWeight, onExport, cloudWeightRange,
+}: ProgressProps) {
+  const [showWeightModal, setShowWeightModal] = useState(false);
+
+  const weightDelta = user.target_weight !== null && user.current_weight !== null ? user.target_weight - user.current_weight : null;
+  const startingWeight = startWeight;
+  const weightChange = startingWeight !== null && user.current_weight !== null ? user.current_weight - startingWeight : null;
+  const weightChangePercent = startingWeight && weightChange !== null ? (weightChange / startingWeight) * 100 : 0;
 
   // ── Weight Moving Average (real data) ──
   const weightDataWithMA = calculateWeightMovingAverage(weightLogs);
@@ -39,30 +47,25 @@ export default function Progress() {
 
   const lastWeeklyVolume = weeklyVolumes.length > 0 ? weeklyVolumes[weeklyVolumes.length - 1] : null;
 
-  const handleLogWeight = () => {
-    const val = window.prompt('Nhập cân nặng mới (kg):', user.current_weight.toString());
-    const wei = val ? parseFloat(val) : 0;
-    if (wei > 0) logWeight(wei);
-  };
+  const handleLogWeight = () => setShowWeightModal(true);
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-500">
-      {showWeightModal && (
+      {showWeightModal && onLogWeight && (
         <WeightModal
           onClose={() => setShowWeightModal(false)}
-          onSave={(wei) => {
-            logWeight(wei);
-            setShowWeightModal(false);
-          }}
+          onSave={onLogWeight}
+          min={cloudWeightRange ? 20 : undefined}
+          max={cloudWeightRange ? 300 : undefined}
         />
       )}
       {/* Header Panel */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-primary)] mb-2">
+          {onExport && <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--color-primary)] mb-2">
             <span className="bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-2 py-0.5 rounded border border-[var(--color-primary)]/30">GIAI ĐOẠN II // MACROCYCLE</span>
             <span className="text-[var(--color-text-muted)]">• Đo Lường Theo Dõi v2.4</span>
-          </div>
+          </div>}
           <h2 className="text-3xl font-bold mb-2">Phân Tích & Tuyến Tiến Độ</h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl">
             Theo Dõi Mật Độ Cơ Thể • Giai Đoạn Meso II (Tăng Cơ Nạc) • {workoutHistory.filter(s => s.status === 'COMPLETED').length} buổi tập hoàn thành
@@ -70,12 +73,12 @@ export default function Progress() {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          <button onClick={() => exportWeightCSV(weightLogs)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-app-bg)] text-white border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
+          {onExport && <button onClick={onExport} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-app-bg)] text-white border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
             <Download className="w-4 h-4" /> Xuất File CSV
-          </button>
-          <button onClick={handleLogWeight} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-dark)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
+          </button>}
+          {onLogWeight && <button onClick={handleLogWeight} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-dark)] px-5 py-2.5 rounded-xl text-xs font-bold transition-colors">
             <Plus className="w-4 h-4" /> Ghi Cân Nặng
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -99,15 +102,15 @@ export default function Progress() {
             )}
             <div>
               <div className="text-xs text-[var(--color-primary)] uppercase tracking-widest font-semibold mb-1">HIỆN TẠI</div>
-              <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-[var(--color-primary)]">{user.current_weight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
-              {startingWeight !== null && (
+              <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-[var(--color-primary)]">{user.current_weight?.toFixed(1) ?? '—'}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
+              {weightChange !== null && (
                 <div className="text-[10px] text-[var(--color-text-muted)]">{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)} kg ({weightChange > 0 ? '+' : ''}{weightChangePercent.toFixed(1)}%)</div>
               )}
             </div>
             <div>
               <div className="text-xs text-blue-400 uppercase tracking-widest font-semibold mb-1">MỤC TIÊU</div>
-              <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-blue-400">{user.target_weight.toFixed(1)}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
-              <div className="text-[10px] text-[var(--color-text-muted)]">Còn {Math.abs(weightDelta).toFixed(1)} kg</div>
+              <div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-blue-400">{user.target_weight?.toFixed(1) ?? '—'}</span><span className="text-xs text-[var(--color-text-muted)]">kg</span></div>
+              {weightDelta !== null && <div className="text-[10px] text-[var(--color-text-muted)]">Còn {Math.abs(weightDelta).toFixed(1)} kg</div>}
             </div>
           </div>
         </div>
@@ -116,22 +119,22 @@ export default function Progress() {
           {weightLogs.length < 2 ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-[var(--color-text-muted)]">
               <div className="text-sm font-semibold">Cần tối thiểu 2 lần cân để hiển thị biểu đồ</div>
-              <button onClick={handleLogWeight} className="mt-3 text-xs text-[var(--color-primary)] hover:underline">Ghi cân nặng ngay</button>
+              {onLogWeight && <button onClick={handleLogWeight} className="mt-3 text-xs text-[var(--color-primary)] hover:underline">Ghi cân nặng ngay</button>}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightDataWithMA} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={formatVietnamShortDate} tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }} dy={10} />
-                <YAxis domain={[(dataMin: number) => Math.min(dataMin, user.target_weight) - 1, (dataMax: number) => Math.max(dataMax, user.target_weight) + 1]} hide={true} />
+                <YAxis domain={[(dataMin: number) => Math.min(dataMin, user.target_weight ?? dataMin) - 1, (dataMax: number) => Math.max(dataMax, user.target_weight ?? dataMax) + 1]} hide={true} />
                 <Tooltip contentStyle={{ backgroundColor: 'var(--color-card-bg)', borderColor: 'var(--color-border)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: 'white' }} />
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <ReferenceLine y={user.target_weight} stroke="#60a5fa" strokeDasharray="3 3" strokeWidth={1.5} strokeOpacity={0.8} />
+                {user.target_weight !== null && <ReferenceLine y={user.target_weight} stroke="#60a5fa" strokeDasharray="3 3" strokeWidth={1.5} strokeOpacity={0.8} />}
                 <Line name="Cân nặng" type="stepAfter" dataKey="weight" stroke="var(--color-border)" strokeWidth={2} dot={{ r: 4, fill: 'var(--color-border)', strokeWidth: 2, stroke: 'var(--color-panel-bg)' }} activeDot={{ r: 6 }} />
                 <Line name="Trung bình 7 ngày" type="monotone" dataKey="ma7" stroke="var(--color-primary)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
-          {weightLogs.length >= 2 && (
+          {weightLogs.length >= 2 && user.target_weight !== null && (
             <div className="absolute top-2 left-4 text-xs text-[#60a5fa] font-bold uppercase tracking-widest">GIỚI HẠN MỤC TIÊU: {user.target_weight.toFixed(1)} KG</div>
           )}
         </div>
@@ -203,9 +206,9 @@ export default function Progress() {
 
           <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] font-semibold uppercase tracking-widest mb-4">
             <div className="flex gap-4">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[var(--color-primary)] rounded"></span> Đạm ({user.target_protein}g)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#60a5fa] rounded"></span> Tinh Bột ({user.target_carbs}g)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#fb923c] rounded"></span> Béo ({user.target_fat}g)</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[var(--color-primary)] rounded"></span> Đạm {user.target_protein !== null && `(${user.target_protein}g)`}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#60a5fa] rounded"></span> Tinh Bột {user.target_carbs !== null && `(${user.target_carbs}g)`}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#fb923c] rounded"></span> Béo {user.target_fat !== null && `(${user.target_fat}g)`}</span>
             </div>
           </div>
 

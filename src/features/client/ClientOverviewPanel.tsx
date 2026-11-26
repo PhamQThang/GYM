@@ -1,6 +1,10 @@
 ﻿import { useEffect, useState } from 'react';
-import { readClientOverview, type ClientOverview, type ClientScope } from '../../lib/repositories/client-overview';
-import { buttonClass } from '../auth/pages/form-styles';
+import { readClientDashboard, readClientOverview, type ClientDashboard, type ClientOverview, type ClientScope } from '../../lib/repositories/client-overview';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import Overview from '../../components/views/Overview';
+import { toLocalDateKey } from '../../lib/analytics';
+import { WorkoutLog } from '../../components/views/workout/WorkoutLog';
+import { saveClientWeight } from '../../lib/repositories/client-tracker';
 import { ClientWorkoutForm } from './ClientWorkoutForm';
 
 const vietnamDate = new Intl.DateTimeFormat('vi-VN', {
@@ -10,21 +14,24 @@ function dateTime(value: string | null) {
   return value ? vietnamDate.format(new Date(value)) : 'Chưa có dữ liệu';
 }
 
-export function ClientOverviewPanel({ userId, clientId }: ClientScope) {
+export function ClientOverviewPanel({ userId, clientId, view }: ClientScope & { view: 'overview' | 'workout' }) {
+  const navigate = useNavigate();
   const [attempt, setAttempt] = useState(0);
-  const [result, setResult] = useState<ClientOverview | 'error' | null>(null);
-  const [recording, setRecording] = useState(false);
+  const [result, setResult] = useState<ClientOverview | ClientDashboard | 'error' | null>(null);
+  const [params, setParams] = useSearchParams();
   const [saved, setSaved] = useState(false);
+  const recording = params.get('ghi') === '1';
   useEffect(() => {
     const request = new AbortController();
+    const load = view === 'overview' ? readClientDashboard : readClientOverview;
     void import('../../lib/supabase')
       .then(({ supabase }) => {
-        if (!request.signal.aborted) return readClientOverview(supabase, { userId, clientId }, request.signal);
+        if (!request.signal.aborted) return load(supabase, { userId, clientId }, request.signal);
       })
       .then(data => { if (data && !request.signal.aborted) setResult(data); })
       .catch(() => { if (!request.signal.aborted) setResult('error'); });
     return () => request.abort();
-  }, [attempt, userId, clientId]);
+  }, [attempt, userId, clientId, view]);
 
   const confirmation = saved && <p role="status">Đã lưu buổi tập.</p>;
   if (!result) return <>{confirmation}<p role="status">Đang tải hồ sơ tập luyện…</p></>;
@@ -33,41 +40,52 @@ export function ClientOverviewPanel({ userId, clientId }: ClientScope) {
     <p role="alert">Chưa tải được hồ sơ tập luyện.</p>
     <button type="button" className="underline" onClick={() => { setResult(null); setAttempt(a => a + 1); }}>Thử lại</button>
   </div>;
-  const target = result.nutrition;
   const workout = result.lastWorkout;
-  const values = [
-    ['Giáo án', result.program ?? 'Chưa được giao'],
-    ['Buổi PT sắp tới', dateTime(result.nextSessionAt)],
-    ['Gói tập đang dùng', result.packageName ?? 'Chưa có gói đang hoạt động'],
-    ['Cân nặng gần nhất', result.weight ? result.weight.kg + ' kg' : 'Chưa ghi cân nặng'],
-    ['Mục tiêu dinh dưỡng', target && Object.values(target).some(value => value !== null)
-      ? [target.calories !== null && target.calories + ' kcal', target.protein !== null && target.protein + ' g protein',
-        target.carbs !== null && target.carbs + ' g carbs', target.fat !== null && target.fat + ' g chất béo'].filter(Boolean).join(' · ')
-      : 'Chưa thiết lập'],
-  ];
-  return <section aria-label="Tổng quan tập luyện" className="space-y-3">
-    <h2 className="font-semibold">Tổng quan tập luyện</h2>
-    <dl className="grid gap-2 sm:grid-cols-2">
-      {values.map(([label, value]) => <div key={label} className="rounded-lg border border-[var(--color-border)] p-3">
-        <dt className="text-sm text-[var(--color-text-muted)]">{label}</dt><dd>{value}</dd>
-      </div>)}
-    </dl>
-    <div className="space-y-3 border-t border-[var(--color-border)] pt-4">
-      <h3 className="font-semibold">Buổi tập gần nhất</h3>
-      {workout ? <>
-        <p>{dateTime(workout.started_at)}</p>
-        {workout.note && <p className="whitespace-pre-wrap break-words">{workout.note}</p>}
-        <ul className="space-y-1 text-sm">
-          {workout.workout_sets.map(set => <li key={set.id}>
-            {set.exercises?.name ?? 'Bài tập'} · {set.weight_kg} kg × {set.reps} lần
-            {set.status === 'skipped' ? ' (đã bỏ qua)' : set.status === 'planned' ? ' (dự kiến)' : ''}
-          </li>)}
-        </ul>
-      </> : <p>Chưa có buổi tập đã lưu.</p>}
-      {confirmation}
-      {recording ? <ClientWorkoutForm clientId={clientId} onClose={() => setRecording(false)} onSave={() => {
-        setRecording(false); setSaved(true); setResult(null); setAttempt(value => value + 1);
-      }} /> : <button type="button" className={buttonClass} onClick={() => { setSaved(false); setRecording(true); }}>Ghi buổi tập</button>}
-    </div>
-  </section>;
+  if ('weights' in result) {
+    const target = result.nutrition;
+    const today = result.todayNutrition;
+    const calories = today?.kcal ?? null;
+    const targetCalories = target?.calories ?? null;
+    const canCompareCalories = calories !== null && targetCalories !== null && targetCalories > 0;
+    const sessionToday = result.nextSessionAt && toLocalDateKey(result.nextSessionAt) === toLocalDateKey(new Date());
+    return <Overview
+      user={{
+        name: result.name, goal_type: result.goal, current_weight: result.weight?.kg ?? null,
+        target_weight: result.targetWeight, target_calories: targetCalories,
+        target_protein: target?.protein ?? null, target_carbs: target?.carbs ?? null, target_fat: target?.fat ?? null,
+      }}
+      programPhase={result.program}
+      weightLogs={result.weights}
+      startWeight={result.startWeight}
+      todayDay={sessionToday ? { name: 'Buổi tập với PT', focus: dateTime(result.nextSessionAt) } : null}
+      todayExerciseDefs={[]}
+      todayMacros={{ pro: today?.protein_g ?? null, carb: today?.carbs_g ?? null, fat: today?.fat_g ?? null }}
+      adherence={{
+        actual: calories,
+        percentage: canCompareCalories ? Math.round(calories / targetCalories * 100) : null,
+        remaining: canCompareCalories ? Math.max(0, targetCalories - calories) : null,
+      }}
+      onOpenWorkout={() => navigate('/client/workout?ghi=1')}
+      onOpenNutrition={() => navigate('/client/nutrition')}
+      nutritionActionLabel="Xem dinh dưỡng"
+      cloudWeightRange
+      onLogWeight={async (weight, submissionId) => {
+        await saveClientWeight({ userId, clientId }, weight, submissionId);
+        setAttempt(value => value + 1);
+      }}
+      workoutActionLabel="Ghi buổi tập"
+      workoutDetails={[
+        { label: 'Giáo án', value: result.program ?? 'Chưa được giao' },
+        { label: 'Lần tập gần nhất', value: dateTime(workout?.started_at ?? null) },
+        { label: 'Buổi PT sắp tới', value: dateTime(result.nextSessionAt) },
+        { label: 'Gói tập đang dùng', value: result.packageName ?? 'Chưa có gói đang hoạt động' },
+      ]}
+    />;
+  }
+
+  return <WorkoutLog workout={workout} saved={saved} onRecord={() => { setSaved(false); setParams({ ghi: '1' }, { replace: true }); }}>
+      {recording ? <ClientWorkoutForm clientId={clientId} onClose={() => setParams({}, { replace: true })} onSave={() => {
+        setParams({}, { replace: true }); setSaved(true); setResult(null); setAttempt(value => value + 1);
+      }} /> : null}
+  </WorkoutLog>;
 }

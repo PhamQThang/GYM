@@ -5,11 +5,18 @@ import {
   calculateNutritionHistory,
   calculateWeeklyVolume,
   calculatePersonalRecords,
+  calculateWeeklyWeightDelta,
   e1RM
 } from './analytics';
 import type { WorkoutSession, WorkoutSet, MealItem, WorkoutExercise, Exercise } from './types';
 
 describe('analytics.ts', () => {
+  it('calculates the weekly weight change from ISO measurement dates', () => {
+    expect(calculateWeeklyWeightDelta([
+      { id: '1', user_id: 'learner', date: '2026-11-19', weight: 84.2 },
+      { id: '2', user_id: 'learner', date: '2026-11-26', weight: 83.4 },
+    ])).toBe(-0.8);
+  });
 
   describe('toLocalDateKey', () => {
       it('returns the same local date key for 00:30 and 23:30 in Vietnam', () => {

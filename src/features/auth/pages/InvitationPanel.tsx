@@ -90,7 +90,7 @@ export function InvitationPanel({ ownerId }: { ownerId: string }) {
     try { await navigator.clipboard.writeText(link); if (mounted.current) setNotice('Đã sao chép đường dẫn mời.'); }
     catch { if (mounted.current) setNotice('Không thể tự sao chép. Bạn có thể chọn và sao chép đường dẫn bên dưới.'); }
   }
-  return <section className="space-y-4 border-t border-[var(--color-border)] pt-6" aria-labelledby="invitation-heading">
+  return <section className="max-w-2xl space-y-4" aria-labelledby="invitation-heading">
     <h2 id="invitation-heading" className="text-lg font-bold">Mời học viên</h2>
     <p className="text-sm leading-6 text-[var(--color-text-muted)]">Chọn hồ sơ chưa liên kết tài khoản. Học viên cần tài khoản được cấp và email đã xác minh để nhận lời mời.</p>
     {error && <AuthNotice error>{error}</AuthNotice>}

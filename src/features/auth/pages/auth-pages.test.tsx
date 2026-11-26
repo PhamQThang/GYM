@@ -3,18 +3,19 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { CloudRoutes } from '../../../CloudApp';
 import { AuthContext } from '../auth-context';
 import type { AuthContextValue, AuthState } from '../auth-types';
 import { LoginPage, ResetPasswordPage, InvitePage, AccountStatusPage } from './index';
 import { authActionError, readInvitationToken, validateEmail, validateNewPassword } from './form-validation';
 
 const base: AuthState = { status: 'signedOut', session: null, profile: null, clientId: null, error: null, disabledReason: null };
-function render(page: ReactNode, overrides: Partial<AuthState> = {}) {
+function render(page: ReactNode, overrides: Partial<AuthState> = {}, path = '/') {
   const context: AuthContextValue = {
     state: { ...base, ...overrides }, signIn: vi.fn(), signOut: vi.fn(), requestPasswordReset: vi.fn(),
     signInWithGoogle: vi.fn(), updatePassword: vi.fn(), acceptInvitation: vi.fn(), refreshProfile: vi.fn(), signUpForInvitation: vi.fn(),
   };
-  return renderToStaticMarkup(<MemoryRouter><AuthContext.Provider value={context}>{page}</AuthContext.Provider></MemoryRouter>);
+  return renderToStaticMarkup(<MemoryRouter initialEntries={[path]}><AuthContext.Provider value={context}>{page}</AuthContext.Provider></MemoryRouter>);
 }
 afterEach(() => vi.unstubAllGlobals());
 
@@ -44,7 +45,10 @@ describe('auth page guards and safe messages', () => {
     expect(unverified).toContain('Hãy xác minh email');
   });
   it('does not expose invitation creation to client accounts', () => {
-    const markup = render(<AccountStatusPage area="client" />, { status: 'ready', profile: { id: 'client-user', full_name: 'Test Member', role: 'client' } });
+    const markup = render(<CloudRoutes />, {
+      status: 'ready', profile: { id: 'client-user', full_name: 'Test Member', role: 'client' },
+      clientId: 'linked-client', session: { user: { id: 'client-user' } } as Session,
+    }, '/client');
     expect(markup).not.toContain('Mời học viên');
   });
   it.each(['pt', 'client'] as const)('links from the account page to the %s area and back', role => {
@@ -54,14 +58,16 @@ describe('auth page guards and safe messages', () => {
       session: { user: { id: 'user' } } as Session,
       clientId: role === 'client' ? 'linked-client' : null,
     };
-    const panel = role === 'pt' ? 'Mời học viên' : 'Đang tải hồ sơ tập luyện';
-    const account = render(<AccountStatusPage />, state);
+    const panel = role === 'pt' ? 'Tổng quan PT' : 'Đang tải hồ sơ tập luyện';
+    const account = render(<CloudRoutes />, state, '/account');
     expect(account).toContain(`href="/${role}"`);
     expect(account).not.toContain(panel);
-    const area = render(<AccountStatusPage area={role} />, state);
+    const area = render(<CloudRoutes />, state, '/' + role);
     expect(area).toContain(panel);
+    expect(area).toContain('<aside');
+    expect(area).toContain('Điều hướng khu vực');
     expect(area).toContain('href="/account"');
-    expect(area).not.toContain(`href="/${role}"`);
+    expect(area).toContain(role === 'pt' ? 'href="/pt/clients"' : 'href="/client/workout"');
   });
   it('only offers learner signup inside a syntactically valid invitation', () => {
     vi.stubGlobal('window', { location: { hash: '#token=' + 'a'.repeat(64) } });
