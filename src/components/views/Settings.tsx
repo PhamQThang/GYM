@@ -25,6 +25,7 @@ export default function Settings() {
 
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
 
   const handleSaveProfile = () => {
     const h = Number(localHeight);
@@ -74,8 +75,19 @@ export default function Settings() {
     reader.onload = (event) => {
       const txt = event.target?.result as string;
       const res = validateImportPayload(txt);
-      if (res.success && res.data) {
+      setImportWarnings([]);
+      if (res.success) {
         importState(res.data);
+        setImportWarnings(res.warnings);
+        const profile = res.data.user;
+        setLocalName(profile.name);
+        setLocalHeight(profile.height ?? '');
+        setLocalTargetWeight(profile.target_weight);
+        setLocalGoal(profile.goal_type ?? 'Maintenance');
+        setLocalCals(profile.target_calories);
+        setLocalPro(profile.target_protein);
+        setLocalCarbs(profile.target_carbs);
+        setLocalFat(profile.target_fat);
         showMsg('success', 'Khôi phục dữ liệu thành công!');
       } else {
         showMsg('error', res.error || 'Lỗi khối phục.');
@@ -97,6 +109,11 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-20">
+      {importWarnings.length > 0 && (
+        <div role="status" className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-sm">
+          {importWarnings.map(warning => <p key={warning}>{warning}</p>)}
+        </div>
+      )}
       <div className="flex justify-between items-center bg-[var(--color-panel-bg)] border border-[var(--color-border)] p-6 rounded-2xl">
          <div>
            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Cài Đặt Hệ Thống</h2>

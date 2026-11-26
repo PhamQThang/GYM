@@ -11,3 +11,6 @@ supabase/.temp/
 .vercel
 *_output.txt
 /scripts-tmp/
+
+# Database exports may contain private records and credentials.
+*.backup

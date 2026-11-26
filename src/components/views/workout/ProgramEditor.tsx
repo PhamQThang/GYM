@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useAppStore } from '../../../lib/store';
 import { Plus, Settings2, Trash2, ChevronDown, ChevronUp, Check, FolderPlus, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card } from '../../ui/Card';
+import { isValidWorkoutPlan } from '../../../lib/workout-validation';
+import type { WorkoutExercise } from '../../../lib/types';
 
 export default function ProgramEditor() {
   const programs = useAppStore((s) => s.programs);
@@ -17,6 +19,25 @@ export default function ProgramEditor() {
 
   const [expandedDay, setExpandedDay] = useState<string | null>(pDays[0]?.id || null);
   const [editingExId, setEditingExId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ planned_sets: '', rep_range_min: '', rep_range_max: '', rest_seconds: '' });
+  const [editError, setEditError] = useState('');
+  const beginEdit = (exercise: WorkoutExercise) => {
+    setEditingExId(exercise.id);
+    setDraft({ planned_sets: String(exercise.planned_sets), rep_range_min: String(exercise.rep_range_min),
+      rep_range_max: String(exercise.rep_range_max), rest_seconds: String(exercise.rest_seconds) });
+    setEditError('');
+  };
+  const saveEdit = (exerciseId: string) => {
+    const values = { planned_sets: Number(draft.planned_sets), rep_range_min: Number(draft.rep_range_min),
+      rep_range_max: Number(draft.rep_range_max), rest_seconds: Number(draft.rest_seconds) };
+    if (Object.values(draft).some(value => value.trim() === '') || !isValidWorkoutPlan(values)) {
+      setEditError('Số hiệp phải là số nguyên dương; reps là số nguyên không âm, nhỏ nhất không vượt lớn nhất; thời gian nghỉ không âm.');
+      return;
+    }
+    updateWorkoutExercise(exerciseId, values);
+    setEditingExId(null);
+    setEditError('');
+  };
 
   // States for adding a new exercise to a day
   const [addPickerDayId, setAddPickerDayId] = useState<string | null>(null);
@@ -126,32 +147,33 @@ export default function ProgramEditor() {
                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <div>
                                            <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Số Hiệp</label>
-                                           <input type="number" min="1" max="10" defaultValue={we.planned_sets} onChange={e => updateWorkoutExercise(we.id, { planned_sets: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
+                                           <input type="number" min="1" step="1" value={draft.planned_sets} onChange={e => setDraft({ ...draft, planned_sets: e.target.value })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
                                            <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Reps Nhỏ Nhất</label>
-                                           <input type="number" min="1" defaultValue={we.rep_range_min} onChange={e => updateWorkoutExercise(we.id, { rep_range_min: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
+                                           <input type="number" min="0" step="1" value={draft.rep_range_min} onChange={e => setDraft({ ...draft, rep_range_min: e.target.value })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
                                            <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Reps Lớn Nhất</label>
-                                           <input type="number" min="1" defaultValue={we.rep_range_max} onChange={e => updateWorkoutExercise(we.id, { rep_range_max: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
+                                           <input type="number" min="0" step="1" value={draft.rep_range_max} onChange={e => setDraft({ ...draft, rep_range_max: e.target.value })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm" />
                                         </div>
                                         <div>
                                            <label className="block text-xs text-[var(--color-text-muted)] uppercase mb-1">Nghỉ (Giây)</label>
-                                           <select defaultValue={we.rest_seconds} onChange={e => updateWorkoutExercise(we.id, { rest_seconds: Number(e.target.value) })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm">
-                                             <option value="45">45s</option><option value="60">60s</option><option value="90">90s</option><option value="120">120s</option><option value="180">180s</option>
+                                           <select value={draft.rest_seconds} onChange={e => setDraft({ ...draft, rest_seconds: e.target.value })} className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-lg text-sm">
+                                             {[...new Set([0, 45, 60, 90, 120, 180, we.rest_seconds])].sort((a, b) => a - b).map(seconds => <option key={seconds} value={seconds}>{seconds}s</option>)}
                                            </select>
                                         </div>
                                      </div>
+                                     {editError && <p role="alert" className="text-sm text-red-400">{editError}</p>}
                                   </div>
                                 )}
                               </div>
 
                               <div className="flex items-center gap-2 shrink-0">
                                  {isEditing ? (
-                                    <button onClick={() => setEditingExId(null)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-primary)] text-black"><Check className="w-4 h-4" /></button>
+                                    <button aria-label="Lưu bài tập" onClick={() => saveEdit(we.id)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-primary)] text-black"><Check className="w-4 h-4" /></button>
                                  ) : (
-                                    <button onClick={() => setEditingExId(we.id)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-card-bg)] text-[var(--color-text-muted)] hover:text-white"><Settings2 className="w-4 h-4" /></button>
+                                    <button aria-label="Chỉnh sửa bài tập" onClick={() => beginEdit(we)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-card-bg)] text-[var(--color-text-muted)] hover:text-white"><Settings2 className="w-4 h-4" /></button>
                                  )}
                                  
                                  <button 

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { User, WorkoutSession, WorkoutSet, Exercise, WorkoutProgram, WorkoutDay, WorkoutExercise, Food, MealTemplate, Meal, MealItem, WeightLog } from './types';
 import { SEED_EXERCISES, SEED_PROGRAM, SEED_WORKOUT_DAYS, SEED_WORKOUT_EXERCISES, SEED_FOODS, SEED_MEAL_TEMPLATES, SEED_MEALS, SEED_MEAL_ITEMS, SEED_WEIGHT_LOGS } from './seed';
 import { toLocalDateKey, localDateKeyToVietnamNoonIso } from './analytics';
+import { isValidSetInput, isValidWorkoutPlan } from './workout-validation';
 
 const MOCK_USER: User = {
   id: 'u-1',
@@ -97,8 +98,31 @@ export interface AppState {
 
   // Phase 9 Settings & Data Management
   updateUser: (updates: Partial<User>) => void;
-  importState: (candidateState: Partial<AppState>) => void;
+  importState: (candidateState: Partial<PersistedAppData>) => void;
   resetApp: () => void;
+}
+
+export const PERSISTED_DATA_KEYS = [
+  'user', 'exercises', 'programs', 'workoutDays', 'workoutExercises',
+  'foods', 'mealTemplates', 'meals', 'mealItems', 'weightLogs', 'waterLogs',
+  'workoutHistory', 'setHistory', 'activeSession', 'activeSets',
+  'restTimerActive', 'restTimerSeconds', 'restTimerEndsAt',
+] as const satisfies readonly (keyof AppState)[];
+
+export type PersistedAppData = Pick<AppState, typeof PERSISTED_DATA_KEYS[number]>;
+
+// Both hydration and import must preserve the live store's methods.
+function pickPersistedData(candidate: unknown): Partial<PersistedAppData> {
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return {};
+  return Object.fromEntries(PERSISTED_DATA_KEYS
+    .filter(key => Object.hasOwn(candidate, key))
+    .map(key => [key, (candidate as Record<string, unknown>)[key]]));
+}
+
+function expirePlannedMeals(meals: Meal[], today = toLocalDateKey(new Date())): Meal[] {
+  return meals.map(meal => meal.date < today && meal.status === 'PLANNED'
+    ? { ...meal, status: 'MISSED' }
+    : meal);
 }
 
 export const useAppStore = create<AppState>()(
@@ -128,17 +152,18 @@ export const useAppStore = create<AppState>()(
       activeSets: [],
 
       // Timer
-      startRestTimer: (seconds) => set({
-        restTimerActive: true,
-        restTimerSeconds: seconds,
-        restTimerEndsAt: Date.now() + seconds * 1000,
-      }),
+      startRestTimer: (seconds) => {
+        const deadline = Date.now() + Math.ceil(seconds * 1000);
+        if (get().activeSession?.status !== 'IN_PROGRESS' || !Number.isFinite(seconds)
+          || seconds < 0 || !Number.isFinite(new Date(deadline).getTime())) return;
+        set({ restTimerActive: seconds > 0, restTimerSeconds: seconds, restTimerEndsAt: seconds > 0 ? deadline : null });
+      },
 
       stopRestTimer: () => set({ restTimerActive: false, restTimerEndsAt: null }),
-      resetRestTimer: () => set((state) => {
-        if (!state.restTimerActive) return state;
-        return { restTimerEndsAt: Date.now() + state.restTimerSeconds * 1000 };
-      }),
+      resetRestTimer: () => {
+        const state = get();
+        if (state.restTimerActive) state.startRestTimer(state.restTimerSeconds);
+      },
 
       // Workout
       startWorkout: (workoutDayId) => {
@@ -146,7 +171,7 @@ export const useAppStore = create<AppState>()(
         set({
           activeSession: {
             id: sessionId,
-            user_id: MOCK_USER.id,
+            user_id: get().user.id,
             workout_day_id: workoutDayId,
             start_time: new Date().toISOString(),
             status: 'IN_PROGRESS',
@@ -325,16 +350,17 @@ export const useAppStore = create<AppState>()(
         set({ activeSets: [...activeSets, newSet] });
       },
 
-      updateSet: (setId, weight, reps) => set((state) => ({
+      updateSet: (setId, weight, reps) => set((state) => !isValidSetInput(weight, reps) ? state : ({
         activeSets: state.activeSets.map(s =>
           s.id === setId ? { ...s, weight, reps } : s
         )
       })),
 
       completeSet: (setId) => {
+        if (get().activeSession?.status !== 'IN_PROGRESS') return;
         const { workoutExercises, activeSets: currentSets } = get();
         const setToComplete = currentSets.find(s => s.id === setId);
-        if (!setToComplete) return;
+        if (!setToComplete || !isValidSetInput(setToComplete.weight, setToComplete.reps)) return;
 
         // Resolve the real exercise_id via workout_exercise mapping
         const weConfig = workoutExercises.find(we => we.id === setToComplete.workout_exercise_id);
@@ -446,6 +472,7 @@ export const useAppStore = create<AppState>()(
 
       ensureMealsForDate: (dateKey) => {
         const { meals, mealTemplates } = get();
+        const reconciledMeals = expirePlannedMeals(meals);
 
         const newMeals: Meal[] = [];
 
@@ -463,13 +490,13 @@ export const useAppStore = create<AppState>()(
               name: template.name,
               scheduled_time: template.scheduled_time,
               description: template.description,
-              status: 'PLANNED'
+              status: dateKey < toLocalDateKey(new Date()) ? 'MISSED' : 'PLANNED'
             });
           }
         }
 
-        if (newMeals.length > 0) {
-          set({ meals: [...meals, ...newMeals] });
+        if (newMeals.length > 0 || reconciledMeals.some((meal, i) => meal !== meals[i])) {
+          set({ meals: [...reconciledMeals, ...newMeals] });
         }
       },
 
@@ -531,15 +558,17 @@ export const useAppStore = create<AppState>()(
           workout_day_id: dayId,
           exercise_id: details.exercise_id,
           order_index: activeForDay.length,
-          planned_sets: details.planned_sets || 3,
-          rep_range_min: details.rep_range_min || 8,
-          rep_range_max: details.rep_range_max || 12,
-          rest_seconds: details.rest_seconds || 90,
+          planned_sets: details.planned_sets ?? 3,
+          rep_range_min: details.rep_range_min ?? 8,
+          rep_range_max: details.rep_range_max ?? 12,
+          rest_seconds: details.rest_seconds ?? 90,
           notes: details.notes || '',
           is_active: true,
           is_system: false,
           is_modified: true,
         };
+
+        if (!isValidWorkoutPlan(newExercise)) return state;
 
         const updatedExercises = state.workoutExercises.map(we => {
           if (we.workout_day_id === dayId && we.is_active !== false) {
@@ -558,7 +587,8 @@ export const useAppStore = create<AppState>()(
       })),
 
       updateWorkoutExercise: (weId, updates) => set((state) => ({
-        workoutExercises: state.workoutExercises.map(we => we.id === weId ? { ...we, ...updates, is_modified: true } : we)
+        workoutExercises: state.workoutExercises.map(we => we.id === weId && isValidWorkoutPlan({ ...we, ...updates })
+          ? { ...we, ...updates, is_modified: true } : we)
       })),
 
       reorderExercises: (dayId, orderedIds) => set((state) => {
@@ -572,10 +602,7 @@ export const useAppStore = create<AppState>()(
 
       // Phase 9 Actions
       updateUser: (updates) => set((state) => ({ user: { ...state.user, ...updates } })),
-      importState: (candidateState) => set((state) => {
-        // Assume candidateState has been fully validated before this is called
-        return { ...state, ...candidateState };
-      }),
+      importState: (candidateState) => set(pickPersistedData(candidateState)),
       resetApp: () => set(() => ({
         user: MOCK_USER,
         exercises: SEED_EXERCISES,
@@ -590,6 +617,8 @@ export const useAppStore = create<AppState>()(
         waterLogs: { [toLocalDateKey(new Date())]: 3200 },
         workoutHistory: [],
         setHistory: [],
+        activeSession: null,
+        activeSets: [],
         restTimerActive: false,
         restTimerEndsAt: null,
         restTimerSeconds: 90
@@ -597,108 +626,19 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'pulse-kinetic-storage',
-      version: 3,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      migrate: (persistedState: any, version: number) => {
-        if (version === 0) {
-          if (persistedState.user) {
-            persistedState.user.height = persistedState.user.height || 175;
-            persistedState.user.goal_type = persistedState.user.goal_type || 'Maintenance';
-            persistedState.user.weight_unit = persistedState.user.weight_unit || 'kg';
-            persistedState.user.energy_unit = persistedState.user.energy_unit || 'kcal';
-          }
-        }
-        if (version < 2) {
-          if (persistedState.meals && Array.isArray(persistedState.meals)) {
-            const legacyDate = toLocalDateKey(new Date());
-            const newTemplates: MealTemplate[] = [];
-            const newMeals: Meal[] = [];
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            persistedState.meals.forEach((ml: any) => {
-              if (ml.date !== undefined && ml.template_id !== undefined) {
-                newMeals.push(ml);
-                return;
-              }
-              const tId = 'mt-' + ml.id;
-              newTemplates.push({
-                id: tId,
-                user_id: ml.user_id,
-                name: ml.name,
-                scheduled_time: ml.scheduled_time,
-                description: ml.description,
-                is_system: false,
-                is_modified: true
-              });
-              newMeals.push({
-                ...ml,
-                date: legacyDate,
-                template_id: tId
-              });
-            });
-
-            persistedState.mealTemplates = [...(persistedState.mealTemplates || []), ...newTemplates];
-            const uniqueTmpl = new Map();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            persistedState.mealTemplates.forEach((t: any) => uniqueTmpl.set(t.id, t));
-            persistedState.mealTemplates = Array.from(uniqueTmpl.values());
-
-            persistedState.meals = newMeals;
-          }
-        }
-        if (version < 3) {
-          if (persistedState.dailyWater !== undefined) {
-            const legacyDate = toLocalDateKey(new Date());
-            persistedState.waterLogs = {
-              ...(persistedState.waterLogs || {}),
-              [legacyDate]: persistedState.dailyWater
-            };
-            delete persistedState.dailyWater;
-          }
-        }
-        if (version < 4) {
-          const seedables = ['exercises', 'programs', 'workoutDays', 'workoutExercises', 'foods', 'mealTemplates'];
-          seedables.forEach((key) => {
-            if (persistedState[key] && Array.isArray(persistedState[key])) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              persistedState[key] = persistedState[key].map((item: any) => ({
-                ...item,
-                is_system: true,
-                is_modified: true
-              }));
-            }
-          });
-        }
-        return persistedState;
-      },
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        const todayKey = toLocalDateKey(new Date());
-        let updated = false;
-
-        const nextMeals = state.meals.map(m => {
-          if (m.date < todayKey && m.status === 'PLANNED') {
-            updated = true;
-            return { ...m, status: 'MISSED' as const };
-          }
-          return m;
-        });
-
-        let finalMeals = state.meals;
-        if (updated) {
-          finalMeals = nextMeals;
-        }
-
-        const synced = syncSeedData(state);
-
-        if (updated || Object.keys(synced).length > 0) {
-          setTimeout(() => {
-            useAppStore.setState({ meals: finalMeals, ...synced });
-          }, 0);
-        }
+      version: 4,
+      migrate: migratePersistedState,
+      merge: (persistedState, currentState) => {
+        const merged = { ...currentState, ...pickPersistedData(persistedState) };
+        return {
+          ...merged,
+          ...syncSeedData(merged),
+          meals: expirePlannedMeals(merged.meals),
+        };
       },
       partialize: (state) => ({
         user: state.user,
+        foods: state.foods,
         exercises: state.exercises,
         programs: state.programs,
         workoutDays: state.workoutDays,
@@ -779,4 +719,63 @@ function syncSeedData(state: AppState): Partial<AppState> {
     ...(foods.updated && { foods: foods.data }),
     ...(mt.updated && { mealTemplates: mt.data })
   };
+}
+
+
+function migratePersistedState(raw: unknown, version: number): Partial<PersistedAppData> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const data: Record<string, unknown> = structuredClone(raw) as Record<string, unknown>;
+  const today = toLocalDateKey(new Date());
+  if (version === 0 && data.user && typeof data.user === 'object') {
+    const user = data.user as Record<string, unknown>;
+    user.height ??= 175;
+    user.goal_type ??= 'Maintenance';
+    user.weight_unit ??= 'kg';
+    user.energy_unit ??= 'kcal';
+  }
+  if (version < 2 && Array.isArray(data.meals)) {
+    const templates = new Map<string, Record<string, unknown>>();
+    if (Array.isArray(data.mealTemplates)) {
+      for (const template of data.mealTemplates as Record<string, unknown>[]) {
+        templates.set(String(template.id), template);
+      }
+    }
+    data.meals = (data.meals as Record<string, unknown>[]).map(meal => {
+      if (meal.date !== undefined && meal.template_id !== undefined) return meal;
+      const templateId = `mt-${meal.id}`;
+      if (!templates.has(templateId)) {
+        templates.set(templateId, {
+          id: templateId, user_id: meal.user_id, name: meal.name,
+          scheduled_time: meal.scheduled_time, description: meal.description,
+          is_system: false, is_modified: true,
+        });
+      }
+      return { ...meal, date: meal.date ?? today, template_id: meal.template_id ?? templateId };
+    });
+    data.mealTemplates = [...templates.values()];
+  }
+  if (version < 3 && typeof data.dailyWater === 'number') {
+    const logs = data.waterLogs && typeof data.waterLogs === 'object'
+      ? data.waterLogs as Record<string, number> : {};
+    data.waterLogs = { ...logs, [today]: logs[today] ?? data.dailyWater };
+  }
+  if (version < 4) {
+    const catalogs = {
+      exercises: SEED_EXERCISES, programs: [SEED_PROGRAM], workoutDays: SEED_WORKOUT_DAYS,
+      workoutExercises: SEED_WORKOUT_EXERCISES, foods: SEED_FOODS, mealTemplates: SEED_MEAL_TEMPLATES,
+    };
+    for (const [key, seeds] of Object.entries(catalogs)) {
+      const items = data[key];
+      if (!Array.isArray(items)) continue;
+      const seedIds = new Set(seeds.map(item => item.id));
+      data[key] = (items as Record<string, unknown>[]).map(item => ({
+        ...item,
+        is_system: typeof item.is_system === 'boolean' ? item.is_system : seedIds.has(String(item.id)),
+        // Missing metadata cannot prove an old item was never customized.
+        is_modified: typeof item.is_modified === 'boolean' ? item.is_modified : true,
+      }));
+    }
+    if (data.foods === undefined) data.foods = structuredClone(SEED_FOODS);
+  }
+  return pickPersistedData(data);
 }
