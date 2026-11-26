@@ -1,28 +1,30 @@
-import { useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Flame, Target, Zap, Droplets, Check, Trash2, Sun, Moon , Calendar as CalendarIcon, Utensils as UtensilsIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
-import { useAppStore } from '../../lib/store';
+import type { Food, Meal, MealItem } from '../../lib/types';
 import { toLocalDateKey, formatVietnamShortDate } from '../../lib/analytics';
 
-export default function Nutrition() {
+type NutritionProps = {
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+  user: { target_calories: number | null; target_protein: number | null; target_carbs: number | null; target_fat: number | null };
+  meals: Meal[];
+  mealItems: MealItem[];
+  foods?: Food[];
+  dailyWater: number | null;
+  waterTarget?: number;
+  status?: ReactNode;
+  addWater?: (ml: number, date: string) => void;
+  logMealItem?: (mealId: string, food: Food, date: string) => void;
+  completeMeal?: (mealId: string) => void;
+  removeMealItem?: (itemId: string) => void;
+};
+
+export default function Nutrition({
+  selectedDate, setSelectedDate, user, meals: todayMeals, mealItems, foods = [], dailyWater, waterTarget, status,
+  addWater, logMealItem, completeMeal, removeMealItem,
+}: NutritionProps) {
   const todayKey = toLocalDateKey(new Date());
-  const [selectedDate, setSelectedDate] = useState(() => todayKey);
-  const user = useAppStore((s) => s.user);
-  const foods = useAppStore((s) => s.foods);
-  const mealItems = useAppStore((s) => s.mealItems);
-  const addWater = useAppStore((s) => s.addWater);
-  const logMealItem = useAppStore((s) => s.logMealItem);
-  const completeMeal = useAppStore((s) => s.completeMeal);
-  const removeMealItem = useAppStore((s) => s.removeMealItem);
-  const getMealsForDate = useAppStore((s) => s.getMealsForDate);
-  const ensureMealsForDate = useAppStore((s) => s.ensureMealsForDate);
-  const getWaterForDate = useAppStore((s) => s.getWaterForDate);
-
-  useEffect(() => {
-    ensureMealsForDate(selectedDate);
-  }, [selectedDate, ensureMealsForDate]);
-
-  const todayMeals = getMealsForDate(selectedDate);
   const todayMealIds = new Set(todayMeals.map(m => m.id));
   const todayItems = mealItems.filter(mi => todayMealIds.has(mi.meal_id) && Boolean(mi.logged_at));
 
@@ -32,31 +34,30 @@ export default function Nutrition() {
   const mFat = todayItems.reduce((acc, mi) => acc + mi.fat, 0);
 
   const todayMacros = { pro: mPro, carb: mCarb, fat: mFat };
-  const getTarget = Number(user.target_calories) || 0;
+  const getTarget = user.target_calories;
 
   const adherence = {
     actual: mCals,
     target: getTarget,
-    percentage: getTarget > 0 ? Math.min(100, Math.round((mCals / getTarget) * 100)) : 0,
-    remaining: getTarget > 0 ? Math.max(0, getTarget - mCals) : 0
+    percentage: getTarget !== null && getTarget > 0 ? Math.min(100, Math.round((mCals / getTarget) * 100)) : 0,
+    remaining: getTarget !== null ? Math.max(0, getTarget - mCals) : null
   };
 
-  const dailyWater = getWaterForDate(selectedDate);
-  const percentHydration = Math.min(100, Math.round((dailyWater / 4000) * 100));
-  const remainingWater = Math.max(0, 4000 - dailyWater);
+  const percentHydration = waterTarget && dailyWater !== null ? Math.min(100, Math.round((dailyWater / waterTarget) * 100)) : null;
+  const remainingWater = waterTarget && dailyWater !== null ? Math.max(0, waterTarget - dailyWater) : null;
 
   const activeMealId = todayMeals.find(m => m.status === 'PLANNED')?.id || todayMeals[todayMeals.length - 1]?.id;
 
   const handlePrevDay = () => {
     const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
+    d.setUTCDate(d.getUTCDate() - 1);
     setSelectedDate(toLocalDateKey(d));
   };
 
   const handleNextDay = () => {
     if (selectedDate >= todayKey) return;
     const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
+    d.setUTCDate(d.getUTCDate() + 1);
     setSelectedDate(toLocalDateKey(d));
   };
 
@@ -90,6 +91,7 @@ export default function Nutrition() {
         </div>
       </div>
 
+      {status ?? <>
       {/* Top Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <Card className="flex flex-col justify-center">
@@ -111,7 +113,7 @@ export default function Nutrition() {
                <Target className="w-4 h-4 text-blue-400" />
             </div>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-3xl font-bold">{user.target_calories.toLocaleString()}</span>
+              <span className="text-3xl font-bold">{user.target_calories?.toLocaleString() ?? '—'}</span>
               <span className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">KCAL</span>
             </div>
             <div className="h-1.5 w-full bg-[var(--color-card-bg)] rounded-full overflow-hidden">
@@ -124,7 +126,7 @@ export default function Nutrition() {
                <Zap className="w-4 h-4 text-orange-400" />
             </div>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-3xl font-bold text-orange-400">{adherence.remaining.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-orange-400">{adherence.remaining?.toLocaleString() ?? '—'}</span>
               <span className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">KCAL</span>
             </div>
          </Card>
@@ -144,26 +146,26 @@ export default function Nutrition() {
            </CardHeader>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
               {[
-                { label: 'ĐẠM', sub: 'TỔNG HỢP CƠ NẠC', percent: user.target_protein > 0 ? Math.round((todayMacros.pro / user.target_protein)*100) : 0, curr: todayMacros.pro, tgt: user.target_protein, color: 'var(--color-primary)' },
-                { label: 'TINH BỘT', sub: 'NĂNG LƯỢNG TẬP LUYỆN', percent: user.target_carbs > 0 ? Math.round((todayMacros.carb / user.target_carbs)*100) : 0, curr: todayMacros.carb, tgt: user.target_carbs, color: '#60a5fa' },
-                { label: 'CHẤT BÉO TỐT', sub: 'CÂN BẰNG NỘI TIẾT TỐ', percent: user.target_fat > 0 ? Math.round((todayMacros.fat / user.target_fat)*100) : 0, curr: todayMacros.fat, tgt: user.target_fat, color: '#fb923c' },
+                { label: 'ĐẠM', sub: 'TỔNG HỢP CƠ NẠC', percent: user.target_protein !== null && user.target_protein > 0 ? Math.round((todayMacros.pro / user.target_protein)*100) : null, curr: todayMacros.pro, tgt: user.target_protein, color: 'var(--color-primary)' },
+                { label: 'TINH BỘT', sub: 'NĂNG LƯỢNG TẬP LUYỆN', percent: user.target_carbs !== null && user.target_carbs > 0 ? Math.round((todayMacros.carb / user.target_carbs)*100) : null, curr: todayMacros.carb, tgt: user.target_carbs, color: '#60a5fa' },
+                { label: 'CHẤT BÉO TỐT', sub: 'CÂN BẰNG NỘI TIẾT TỐ', percent: user.target_fat !== null && user.target_fat > 0 ? Math.round((todayMacros.fat / user.target_fat)*100) : null, curr: todayMacros.fat, tgt: user.target_fat, color: '#fb923c' },
               ].map(macro => (
                 <div key={macro.label} className="bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
                      <div 
-                       role="progressbar" 
+                       role={macro.percent === null ? undefined : 'progressbar'}
                        aria-label={`Tiến độ ${macro.label}`} 
                        aria-valuemin={0} 
                        aria-valuemax={100} 
-                       aria-valuenow={Math.min(100, macro.percent)} 
+                       aria-valuenow={macro.percent === null ? undefined : Math.min(100, macro.percent)}
                        className="relative w-28 h-28 flex items-center justify-center mb-6"
                      >
                         <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                            <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--color-card-bg)" strokeWidth="10" />
-                           <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="10" strokeLinecap="round" strokeDasharray="263.89" strokeDashoffset={Math.max(0, 263.89 * (1 - (macro.percent > 100 ? 100 : macro.percent) / 100))} className="transition-all duration-1000 ease-out" />
+                           <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="10" strokeLinecap="round" strokeDasharray="263.89" strokeDashoffset={Math.max(0, 263.89 * (1 - Math.min(100, macro.percent ?? 0) / 100))} className="transition-all duration-1000 ease-out" />
                         </svg>
                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                         <span className="text-2xl font-bold">{macro.percent}%</span>
-                         <span className="text-[10px] font-semibold text-[var(--color-text-muted)] mt-1">{macro.curr}g / {macro.tgt}g</span>
+                         <span className="text-2xl font-bold">{macro.percent === null ? '—' : `${macro.percent}%`}</span>
+                         <span className="text-[10px] font-semibold text-[var(--color-text-muted)] mt-1">{macro.curr}g / {macro.tgt ?? '—'}g</span>
                        </div>
                    </div>
                    <h5 className="font-bold tracking-widest">{macro.label}</h5>
@@ -181,44 +183,44 @@ export default function Nutrition() {
                  <Droplets className="w-5 h-5 text-blue-400" />
                </div>
                <div>
-                  <h4 className="text-lg font-semibold leading-tight">Mục Tiêu<br/>Uống Nước</h4>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">Cơ sở hàng ngày: 4.0 Lít</p>
+                   <h4 className="text-lg font-semibold leading-tight">{waterTarget ? 'Mục Tiêu Uống Nước' : 'Nước Đã Uống'}</h4>
+                   {waterTarget && <p className="text-[10px] text-[var(--color-text-muted)]">{(waterTarget / 1000).toFixed(1)} lít mỗi ngày</p>}
                </div>
              </div>
-             <div className="text-right">
+             {percentHydration !== null && <div className="text-right">
                 <div className="text-xs text-blue-400 font-bold">{percentHydration}%</div>
                 <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest">ĐÃ ĐẠT</div>
-             </div>
-           </CardHeader>
+              </div>}
+            </CardHeader>
 
            <div className="flex items-center gap-6 mt-8">
               <div className="flex-1">
                  <div className="flex items-baseline gap-1">
-                   <span className="text-4xl font-bold text-blue-400">{(dailyWater / 1000).toFixed(1)}</span>
-                   <span className="text-sm font-semibold text-[var(--color-text-muted)]">/ 4.0L</span>
+                   <span className="text-4xl font-bold text-blue-400">{dailyWater === null ? '—' : (dailyWater / 1000).toFixed(1)}</span>
+                   <span className="text-sm font-semibold text-[var(--color-text-muted)]">{waterTarget ? `/ ${(waterTarget / 1000).toFixed(1)} L` : 'L'}</span>
                  </div>
-                 <p className="text-xs text-[var(--color-text-muted)] mt-1">Còn lại: {remainingWater} ml</p>
+                  {remainingWater !== null && <p className="text-xs text-[var(--color-text-muted)] mt-1">Còn lại: {remainingWater} ml</p>}
 
-                 <div className="mt-6 space-y-2">
+                 {addWater && <div className="mt-6 space-y-2">
                    <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">GHI NHANH THỂ TÍCH NƯỚC</div>
                    <div className="flex gap-2">
                       <button onClick={() => addWater(250, selectedDate)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 250 ml</button>
                       <button onClick={() => addWater(500, selectedDate)} className="flex-1 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] py-2 rounded-lg text-xs font-semibold text-blue-400 transition-colors">+ 500 ml</button>
                    </div>
-                 </div>
+                 </div>}
               </div>
 
-              <div className="w-16 h-40 bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-full overflow-hidden relative p-1 shrink-0">
+              {percentHydration !== null && <div className="w-16 h-40 bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-full overflow-hidden relative p-1 shrink-0">
                  <div className="absolute bottom-1 left-1 right-1 bg-blue-500/20 rounded-full flex flex-col justify-end overflow-hidden" style={{ height: 'calc(100% - 8px)' }}>
                     <div className="w-full bg-blue-400 rounded-full transition-all duration-1000 ease-out" style={{ height: `${percentHydration}%` }}></div>
                  </div>
-              </div>
+              </div>}
            </div>
         </Card>
       </div>
 
       {/* Fuel Pills */}
-      <div>
+      {logMealItem && <div>
          <div className="flex items-center justify-between mb-3 text-xs">
             <div className="flex items-center gap-2 text-[var(--color-primary)] font-semibold uppercase tracking-widest">
                <Zap className="w-4 h-4 fill-current" /> VIÊN NĂNG LƯỢNG PHÌ ĐẠI CƠ TỨC THÌ
@@ -236,7 +238,7 @@ export default function Nutrition() {
               </button>
             ))}
          </div>
-      </div>
+      </div>}
 
       {/* Intake Chronology */}
       <div>
@@ -249,6 +251,7 @@ export default function Nutrition() {
          </div>
 
          <div className="space-y-4">
+            {todayMeals.length === 0 && <Card className="text-[var(--color-text-muted)]">Chưa ghi nhận bữa ăn cho ngày này.</Card>}
             {todayMeals.map((meal, index) => {
               const items = mealItems.filter(mi => mi.meal_id === meal.id);
               // Only logged (consumed) items contribute to the meal totals
@@ -290,7 +293,7 @@ export default function Nutrition() {
                            <div><span className="text-orange-400">{mFat}g</span> <span className="text-[var(--color-text-muted)] text-[10px]">F</span></div>
                          </>
 
-                         {meal.status === 'PLANNED' && (
+                         {meal.status === 'PLANNED' && completeMeal && (
                            <button onClick={() => completeMeal(meal.id)} className="flex items-center gap-1.5 text-xs bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-black py-1.5 px-3 rounded-lg transition-colors border border-[var(--color-primary)]/30 border-dashed">
                              <Check className="w-4 h-4" /> Ăn Xong
                            </button>
@@ -313,8 +316,8 @@ export default function Nutrition() {
                             </tr>
                           </thead>
                           <tbody>
-                            {items.map((item, i) => (
-                              <tr key={i} className="border-b border-[var(--color-border)]/30 last:border-0 hover:bg-[var(--color-card-bg)]/50 transition-colors">
+                            {items.map(item => (
+                              <tr key={item.id} className="border-b border-[var(--color-border)]/30 last:border-0 hover:bg-[var(--color-card-bg)]/50 transition-colors">
                                 <td className="py-3 px-6">
                                    <div className="font-semibold text-sm">{item.name}</div>
                                 </td>
@@ -322,11 +325,11 @@ export default function Nutrition() {
                                 <td className="py-3 px-6 text-center text-sm font-medium text-[var(--color-primary)]">{item.protein}g</td>
                                 <td className="py-3 px-6 text-center text-sm font-medium text-blue-400">{item.carbs}g</td>
                                 <td className="py-3 px-6 text-center text-sm font-medium text-orange-400">{item.fat}g</td>
-                                <td className="py-3 px-6 text-right">
+                                {removeMealItem && <td className="py-3 px-6 text-right">
                                    <div className="flex items-center justify-end gap-2 text-[var(--color-text-muted)]">
                                      <button onClick={() => removeMealItem(item.id)} className="p-1.5 hover:text-red-400 transition-colors rounded" aria-label="Xóa món ăn"><Trash2 className="w-3.5 h-3.5" /></button>
                                    </div>
-                                </td>
+                                </td>}
                               </tr>
                             ))}
                           </tbody>
@@ -338,8 +341,7 @@ export default function Nutrition() {
             })}
          </div>
       </div>
+      </>}
     </div>
   );
 }
-
-// Temporary icon components since I can't import directly in the middle of a string block easily for everything if I missed them

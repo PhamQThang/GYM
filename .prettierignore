@@ -2,3 +2,4 @@ node_modules
 dist
 build_output
 .vercel
+src/lib/database.types.ts

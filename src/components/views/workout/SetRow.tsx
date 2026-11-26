@@ -29,24 +29,29 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
   const [isEditingWeight, setIsEditingWeight] = React.useState(false);
   const [isEditingReps, setIsEditingReps] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
+  const [weightError, setWeightError] = React.useState('');
+  const [repsError, setRepsError] = React.useState('');
 
   React.useEffect(() => {
-    if (isEditingWeight) return;
+    if (isEditingWeight || weightError) return;
     const nextWeight = workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight;
     setLocalWeight(nextWeight);
-  }, [workoutSet.weight, workoutSet.status, isEditingWeight]);
+  }, [workoutSet.weight, workoutSet.status, isEditingWeight, weightError]);
 
   React.useEffect(() => {
-    if (isEditingReps) return;
+    if (isEditingReps || repsError) return;
     setLocalReps(workoutSet.reps || '');
-  }, [workoutSet.reps, isEditingReps]);
+  }, [workoutSet.reps, isEditingReps, repsError]);
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setLocalWeight(val);
     const num = Number(val);
-    if (!isNaN(num) && num >= 0 && val.trim() !== '') {
+    if (Number.isFinite(num) && num >= 0 && val.trim() !== '') {
+       setWeightError('');
        updateSet(workoutSet.id, num, workoutSet.reps);
+    } else {
+       setWeightError('Tạ phải là số hữu hạn không âm. Giá trị này chưa được lưu.');
     }
   };
 
@@ -54,25 +59,31 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
     const val = e.target.value;
     setLocalReps(val);
     const num = Number(val);
-    if (!isNaN(num) && num >= 0 && val.trim() !== '') {
+    if (Number.isSafeInteger(num) && num >= 0 && val.trim() !== '') {
+       setRepsError('');
        updateSet(workoutSet.id, workoutSet.weight, num);
+    } else {
+       setRepsError('Reps phải là số nguyên không âm. Giá trị này chưa được lưu.');
     }
   };
 
   const handleWeightFocus = () => setIsEditingWeight(true);
   const handleWeightBlur = () => {
     setIsEditingWeight(false);
-    // Revert visual to valid committed store state on blur if left empty/invalid
+    // Keep invalid input visible until corrected; it has not reached the store.
+    if (weightError) return;
     setLocalWeight(workoutSet.weight === 0 && workoutSet.status === 'PLANNED' ? '' : workoutSet.weight);
   };
 
   const handleRepsFocus = () => setIsEditingReps(true);
   const handleRepsBlur = () => {
     setIsEditingReps(false);
+    if (repsError) return;
     setLocalReps(workoutSet.reps || '');
   };
 
   const handleWeightStep = (amount: number) => {
+    setWeightError('');
     const nextVal = Math.max(0, workoutSet.weight + amount);
     setIsEditingWeight(false);
     setLocalWeight(nextVal);
@@ -80,6 +91,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
   };
 
   const handleRepsStep = (amount: number) => {
+    setRepsError('');
     const nextVal = Math.max(0, workoutSet.reps + amount);
     setIsEditingReps(false);
     setLocalReps(nextVal);
@@ -120,6 +132,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   type="number"
                   aria-label={`Khối lượng (kg) cho hiệp ${workoutSet.set_number}`}
                   value={localWeight}
+                  aria-invalid={!!weightError}
                   onChange={handleWeightChange}
                   onFocus={handleWeightFocus}
                   onBlur={handleWeightBlur}
@@ -158,6 +171,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
                   type="number"
                   aria-label={`Số lần (reps) cho hiệp ${workoutSet.set_number}`}
                   value={localReps}
+                  aria-invalid={!!repsError}
                   onChange={handleRepsChange}
                   onFocus={handleRepsFocus}
                   onBlur={handleRepsBlur}
@@ -202,7 +216,7 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
              <button
                aria-label={`Hoàn thành hiệp ${workoutSet.set_number}`}
                onClick={() => completeSet(workoutSet.id)}
-               disabled={workoutSet.reps <= 0 || isNaN(workoutSet.reps)}
+               disabled={workoutSet.reps <= 0 || !Number.isSafeInteger(workoutSet.reps) || !!weightError || !!repsError}
                className="w-11 h-11 md:w-12 md:h-12 bg-[var(--color-card-bg)] hover:bg-[var(--color-primary)] text-[var(--color-text-muted)] hover:text-black rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed group outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
              >
                <Check className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
@@ -229,6 +243,8 @@ const SetRow = React.memo(function SetRow({ workoutSet, prevPerf, isPr }: SetRow
            </button>
         </div>
       </div>
+
+      {(weightError || repsError) && <p role="alert" className="text-sm text-red-400">{weightError || repsError}</p>}
 
       {/* Actions Mobile (Inline Popover Equivalent) */}
       {showMenu && (

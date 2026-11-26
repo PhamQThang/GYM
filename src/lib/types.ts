@@ -96,6 +96,7 @@ export interface WorkoutSession {
   status: WorkoutStatus;
   total_volume: number;
   loaded_planned_exercises?: string[];
+  note?: string;
 }
 
 export interface WorkoutSet {
@@ -108,6 +109,14 @@ export interface WorkoutSet {
   /** @deprecated PR is derived from raw sets and must not be persisted. */
   is_pr?: boolean;
   status: SetStatus;
+}
+
+export interface WorkoutHistoryData {
+  workoutHistory: WorkoutSession[];
+  setHistory: WorkoutSet[];
+  workoutDays: Pick<WorkoutDay, 'id' | 'name'>[];
+  workoutExercises: Pick<WorkoutExercise, 'id' | 'exercise_id'>[];
+  exercises: Pick<Exercise, 'id' | 'name' | 'primary_muscle'>[];
 }
 
 export interface Food {

@@ -1,70 +1,68 @@
-import { WeightModal } from '../ui/WeightModal';
 import { useState, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Play, Scale, Target, Activity, Flame, Dumbbell, TrendingUp, TrendingDown, Timer, Minus } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
+import { WeightModal } from '../ui/WeightModal';
+import { calculateWeeklyWeightDelta, formatTodayVietnamese, getVietnameseGreeting } from '../../lib/analytics';
+import type { Exercise, Meal, WeightLog, WorkoutDay, WorkoutExercise } from '../../lib/types';
 
 const OverviewWeightChart = lazy(() => import('./OverviewWeightChart'));
-import { useAppStore } from '../../lib/store';
-import {
-  calculateCalorieAdherence,
-  calculateNutritionHistory,
-  calculatePersonalRecords,
-  calculateWeeklyWeightDelta,
-  formatTodayVietnamese,
-  getVietnameseGreeting,
-} from '../../lib/analytics';
-import { initGlobalAudio } from '../../lib/notifications';
 
-// ─────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────
+type OverviewProps = {
+  user: {
+    name: string;
+    goal_type?: string | null;
+    current_weight: number | null;
+    target_weight: number | null;
+    target_calories: number | null;
+    target_protein: number | null;
+    target_carbs: number | null;
+    target_fat: number | null;
+  };
+  programPhase: string | null;
+  weightLogs: WeightLog[];
+  startWeight: number | null;
+  todayDay: Pick<WorkoutDay, 'name' | 'focus'> | null;
+  todayExerciseDefs: { we: Pick<WorkoutExercise, 'id' | 'planned_sets' | 'rest_seconds' | 'rep_range_min' | 'rep_range_max'>;
+    exercise: Pick<Exercise, 'id' | 'name' | 'primary_muscle' | 'type'> | undefined }[];
+  prMap?: Map<string, { bestSet: { weight: number; reps: number } }>;
+  todayMacros: { pro: number | null; carb: number | null; fat: number | null };
+  adherence: { actual: number | null; percentage: number | null; remaining: number | null };
+  mealCalories?: { meal: Pick<Meal, 'id' | 'name' | 'status'>; loggedCals: number }[];
+  consumedMealCount?: number;
+  onLogWeight?: (weight: number, submissionId: string) => void | Promise<void>;
+  cloudWeightRange?: boolean;
+  onOpenNutrition?: () => void;
+  nutritionActionLabel?: string;
+  onOpenWorkout: () => void;
+  workoutActionLabel?: string;
+  workoutDetails?: { label: string; value: string }[];
+};
 
-
-// ─────────────────────────────────────────────────
-// WEIGHT MODAL (minimal inline form)
-// ─────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────────
-export default function Overview() {
+export default function Overview({
+  user, programPhase, weightLogs, startWeight: startingWeight, todayDay, todayExerciseDefs, prMap,
+  todayMacros, adherence, mealCalories = [], consumedMealCount = 0, onLogWeight, onOpenNutrition,
+  onOpenWorkout, workoutActionLabel, workoutDetails, nutritionActionLabel, cloudWeightRange,
+}: OverviewProps) {
   const [showWeightModal, setShowWeightModal] = useState(false);
-  const navigate = useNavigate();
-
-  const user = useAppStore((s) => s.user);
-  const mealItems = useAppStore((s) => s.mealItems);
-  const meals = useAppStore((s) => s.meals);
-  const weightLogs = useAppStore((s) => s.weightLogs);
-  const workoutDays = useAppStore((s) => s.workoutDays);
-  const workoutExercises = useAppStore((s) => s.workoutExercises);
-  const exercises = useAppStore((s) => s.exercises);
-  const workoutHistory = useAppStore((s) => s.workoutHistory);
-  const setHistory = useAppStore((s) => s.setHistory);
-  const programs = useAppStore((s) => s.programs);
-  const startWorkout = useAppStore((s) => s.startWorkout);
-  const logWeight = useAppStore((s) => s.logWeight);
-
-  // ── Date & Greeting ──────────────────────────────
   const todayDateLabel = formatTodayVietnamese();
   const greeting = getVietnameseGreeting();
-  const activeProgram = programs[0] ?? null;
-  const programPhase = activeProgram?.phase ?? null;
-
-  // ── Nutrition ────────────────────────────────────
-  const nutritionHistory = calculateNutritionHistory(mealItems);
-  const todayMacros = nutritionHistory[nutritionHistory.length - 1] ?? { pro: 0, carb: 0, fat: 0, calories: 0, day: '', dateKey: '', active: false };
-  const adherence = calculateCalorieAdherence(mealItems, user);
-
+  const todayExercises = todayExerciseDefs.map(({ we }) => we);
+  const totalPlannedSets = todayExercises.reduce((acc, we) => acc + we.planned_sets, 0);
+  const estimatedMinutes = Math.round(
+    todayExercises.reduce((acc, we) => acc + we.planned_sets * (we.rest_seconds + 40), 0) / 60
+  );
+  const hasExercisesToday = todayExerciseDefs.length > 0;
+  const canOpenWorkout = hasExercisesToday || Boolean(workoutActionLabel);
+  const hasNutritionTarget = user.target_calories !== null && user.target_calories > 0;
+  const caloriePercent = Math.min(100, Math.max(0, adherence.percentage ?? 0));
   // ── Weight ───────────────────────────────────────
   const currentWeight = user.current_weight;
   const targetWeight = user.target_weight;
-  const startingWeight = weightLogs[0]?.weight ?? null;
   const weeklyDelta = calculateWeeklyWeightDelta(weightLogs);
 
   // Dual-directional weight progress (Bulk vs Cut)
   let weightProgressPct = 0;
-  if (startingWeight !== null) {
+  if (startingWeight !== null && currentWeight !== null && targetWeight !== null) {
     if (targetWeight > startingWeight) {
       weightProgressPct = ((currentWeight - startingWeight) / (targetWeight - startingWeight)) * 100;
     } else if (targetWeight < startingWeight) {
@@ -74,61 +72,21 @@ export default function Overview() {
   if (!isFinite(weightProgressPct) || isNaN(weightProgressPct)) weightProgressPct = 0;
   weightProgressPct = Math.max(0, Math.min(100, Math.round(weightProgressPct)));
 
-  // ── Today's Workout ──────────────────────────────
-  const todayDow = new Date().getDay(); // 0=Sun, 1=Mon, ...
-  const todayDay = workoutDays.find(d => d.day_of_week === todayDow && d.is_active) ?? null;
-  const todayExercises = todayDay
-    ? workoutExercises
-        .filter(we => we.workout_day_id === todayDay.id && we.is_active !== false)
-        .sort((a, b) => a.order_index - b.order_index)
-    : [];
-  const todayExerciseDefs = todayExercises.map(we => ({
-    we,
-    exercise: exercises.find(e => e.id === we.exercise_id),
-  })).filter(x => x.exercise !== undefined);
-
-  const totalPlannedSets = todayExercises.reduce((acc, we) => acc + we.planned_sets, 0);
-  const estimatedMinutes = Math.round(
-    todayExercises.reduce((acc, we) => acc + we.planned_sets * (we.rest_seconds + 40), 0) / 60
-  );
-  const hasExercisesToday = todayExerciseDefs.length > 0;
-
-  // ── PRs ──────────────────────────────────────────
-  const prs = calculatePersonalRecords(setHistory, workoutHistory, workoutExercises, exercises);
-  const prMap = new Map(prs.map(pr => [pr.exerciseId, pr]));
-
-  // ── Meal distribution (consumed only) ────────────
-  const mealCalories = meals.map(meal => {
-    const loggedCals = mealItems
-      .filter(mi => mi.meal_id === meal.id && Boolean(mi.logged_at))
-      .reduce((a, i) => a + i.calories, 0);
-    return { meal, loggedCals };
-  });
-  const consumedMealCount = meals.filter(
-    m => mealItems.some(mi => mi.meal_id === m.id && Boolean(mi.logged_at))
-  ).length;
-
-  // ── Hero: Start Workout ──────────────────────────
-  const handleStartWorkout = () => {
-    if (!todayDay || !hasExercisesToday) return;
-    initGlobalAudio();
-    startWorkout(todayDay.id);
-    navigate('/workout');
-  };
-
   // ── Weight goal label ─────────────────────────────
-  const weightGoalDiff = targetWeight - currentWeight;
-  const weightGoalLabel = weightGoalDiff > 0
+  const weightGoalDiff = currentWeight !== null && targetWeight !== null ? targetWeight - currentWeight : null;
+  const weightGoalLabel = weightGoalDiff === null ? null : weightGoalDiff > 0
     ? `+${weightGoalDiff.toFixed(1)} kg`
     : `${weightGoalDiff.toFixed(1)} kg`;
 
   return (
     <div className="space-y-6">
       {/* Weight Modal */}
-      {showWeightModal && (
+      {showWeightModal && onLogWeight && (
         <WeightModal
           onClose={() => setShowWeightModal(false)}
-          onSave={(w) => logWeight(w)}
+          onSave={onLogWeight}
+          min={cloudWeightRange ? 20 : undefined}
+          max={cloudWeightRange ? 300 : undefined}
         />
       )}
 
@@ -139,47 +97,47 @@ export default function Overview() {
             <span className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full"></span>
             Hệ Thống Trực Tuyến • {todayDateLabel}{programPhase ? ` • ${programPhase}` : ''}
           </div>
-          <h2 className="text-4xl font-bold mb-4">{greeting}, {user.name.split(' ')[0]}</h2>
+          <h1 className="text-4xl font-bold mb-4">{greeting}{user.name && `, ${user.name.split(' ')[0]}`}</h1>
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
             <Target className="w-4 h-4 text-[var(--color-primary)]" />
-            <p>
+            {currentWeight !== null && targetWeight !== null ? <p>
               Mục Tiêu {user.goal_type ?? 'Cân Nặng'}:{' '}
               <span className="font-semibold text-white">{currentWeight.toFixed(1)} kg</span>
               {' → '}
               <span className="font-semibold text-[var(--color-primary)]">{targetWeight.toFixed(1)} kg</span>
               {' '}({weightGoalLabel})
-            </p>
+            </p> : <p>{user.goal_type || (targetWeight !== null ? `Mục tiêu cân nặng ${targetWeight.toFixed(1)} kg` : 'Chưa đặt mục tiêu cân nặng')}</p>}
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <div className="flex w-full gap-3">
-            <button
+          {(onLogWeight || onOpenNutrition) && <div className="flex w-full gap-3">
+            {onLogWeight && <button
               onClick={() => setShowWeightModal(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-3 rounded-xl font-medium transition-colors"
             >
               <Scale className="w-4 h-4 text-blue-400" />
               Ghi Nhận Cân Nặng
-            </button>
-            <button
-              onClick={() => navigate('/nutrition')}
+            </button>}
+            {onOpenNutrition && <button
+              onClick={onOpenNutrition}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-5 py-3 rounded-xl font-medium transition-colors"
             >
               <Flame className="w-4 h-4 text-orange-400" />
-              Ghi Nhanh Đồ Ăn
-            </button>
-          </div>
+              {nutritionActionLabel ?? 'Ghi Nhanh Đồ Ăn'}
+            </button>}
+          </div>}
           <button
-            onClick={handleStartWorkout}
-            disabled={!hasExercisesToday}
+            onClick={onOpenWorkout}
+            disabled={!canOpenWorkout}
             className={`w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold transition-colors ${
-              hasExercisesToday
+              canOpenWorkout
                 ? 'bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-dark)]'
                 : 'bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-not-allowed'
             }`}
           >
-            <Play className={`w-4 h-4 ${hasExercisesToday ? 'fill-black' : ''}`} />
-            {todayDay ? `Bắt Đầu ${todayDay.name}` : 'Ngày Nghỉ'}
+            <Play className={`w-4 h-4 ${canOpenWorkout ? 'fill-black' : ''}`} />
+            {workoutActionLabel ?? (todayDay ? `Bắt Đầu ${todayDay.name}` : 'Ngày Nghỉ')}
           </button>
         </div>
       </div>
@@ -200,8 +158,8 @@ export default function Overview() {
           </CardHeader>
           <div className="mt-4 flex items-end justify-between">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold">{currentWeight.toFixed(1)}</span>
-              <span className="text-xl text-[var(--color-text-muted)] font-medium">kg</span>
+              <span className="text-4xl font-bold">{currentWeight?.toFixed(1) ?? '—'}</span>
+              {currentWeight !== null && <span className="text-xl text-[var(--color-text-muted)] font-medium">kg</span>}
             </div>
             {weeklyDelta !== null ? (
               <div className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 ${
@@ -221,7 +179,7 @@ export default function Overview() {
             )}
           </div>
           {/* Weight progress toward target */}
-          {weightLogs.length > 0 ? (
+          {weightLogs.length > 0 && currentWeight !== null && targetWeight !== null ? (
             <div className="mt-6 space-y-3">
               <div className="flex justify-between text-xs mb-1 font-semibold">
                 <span>Tiến độ mục tiêu</span>
@@ -245,7 +203,7 @@ export default function Overview() {
           ) : (
             <div className="mt-6 space-y-3">
               <div className="bg-[var(--color-app-bg)] border border-[var(--color-border)] rounded-lg p-3 text-center text-xs text-[var(--color-text-muted)]">
-                Chưa đủ dữ liệu lịch sử để hiển thị tiến độ
+                {currentWeight === null ? 'Chưa ghi nhận cân nặng' : targetWeight === null ? 'Chưa đặt mục tiêu cân nặng' : 'Chưa đủ dữ liệu lịch sử để hiển thị tiến độ'}
               </div>
             </div>
           )}
@@ -264,45 +222,45 @@ export default function Overview() {
           </CardHeader>
           <div className="mt-4 flex items-center gap-6">
             <div 
-              role="progressbar" 
+              role={adherence.percentage === null ? undefined : 'progressbar'}
               aria-label="Cân bằng năng lượng hàng ngày" 
               aria-valuemin={0} 
               aria-valuemax={100} 
-              aria-valuenow={Math.min(100, adherence.percentage)} 
+              aria-valuenow={adherence.percentage === null ? undefined : caloriePercent}
               className="relative w-24 h-24 flex items-center justify-center shrink-0"
             >
               <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-card-bg)" strokeWidth="10" />
-                <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-primary)" strokeWidth="10" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - Math.min(100, adherence.percentage) / 100)} className="transition-all duration-1000 ease-out" />
+                <circle cx="50" cy="50" r="45" fill="transparent" stroke="var(--color-primary)" strokeWidth="10" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - caloriePercent / 100)} className="transition-all duration-1000 ease-out" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-bold">{adherence.percentage}%</span>
-                <span className="text-xs text-[var(--color-text-muted)] uppercase">đã đạt</span>
+                <span className="text-xl font-bold">{adherence.percentage === null ? '—' : `${adherence.percentage}%`}</span>
+                {adherence.percentage !== null && <span className="text-xs text-[var(--color-text-muted)] uppercase">đã đạt</span>}
               </div>
             </div>
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">{adherence.actual.toLocaleString()}</span>
-                <span className="text-sm text-[var(--color-text-muted)] font-medium">/ {user.target_calories.toLocaleString()}</span>
+                <span className="text-3xl font-bold">{adherence.actual?.toLocaleString() ?? '—'}</span>
+                {user.target_calories !== null && <span className="text-sm text-[var(--color-text-muted)] font-medium">/ {user.target_calories.toLocaleString()}</span>}
               </div>
               <div className="text-xs font-semibold text-[var(--color-primary)] mt-1">
-                {adherence.remaining.toLocaleString()} KCAL CÒN LẠI
+                {adherence.remaining !== null ? `${adherence.remaining.toLocaleString()} KCAL CÒN LẠI` : hasNutritionTarget ? 'Chưa ghi bữa ăn hôm nay' : 'Chưa đặt mục tiêu calo'}
               </div>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-snug">Thặng dư năng lượng</p>
+              {onOpenNutrition && !nutritionActionLabel && <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-snug">Thặng dư năng lượng</p>}
             </div>
           </div>
           <div className="mt-6 flex justify-between text-xs">
             <div>
               <div className="text-[var(--color-text-muted)] uppercase tracking-wider mb-1">PRO</div>
-              <div><span className="font-semibold text-white">{todayMacros.pro}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_protein}</span></div>
+              <div><span className="font-semibold text-white">{todayMacros.pro ?? '—'}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_protein ?? '—'}</span></div>
             </div>
             <div>
               <div className="text-[var(--color-text-muted)] uppercase tracking-wider mb-1">CARB</div>
-              <div><span className="font-semibold text-blue-400">{todayMacros.carb}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_carbs}</span></div>
+              <div><span className="font-semibold text-blue-400">{todayMacros.carb ?? '—'}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_carbs ?? '—'}</span></div>
             </div>
             <div>
               <div className="text-[var(--color-text-muted)] uppercase tracking-wider mb-1">FAT</div>
-              <div><span className="font-semibold text-orange-400">{todayMacros.fat}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_fat}</span></div>
+              <div><span className="font-semibold text-orange-400">{todayMacros.fat ?? '—'}g</span> <span className="text-[var(--color-text-muted)]">/{user.target_fat ?? '—'}</span></div>
             </div>
           </div>
         </Card>
@@ -315,7 +273,7 @@ export default function Overview() {
               <h4 className="text-xl font-semibold mt-1">Buổi Tập Hôm Nay</h4>
             </div>
             <div className={`bg-[var(--color-card-bg)] border border-[var(--color-border)] px-2 py-1 rounded text-xs font-semibold tracking-widest uppercase ${hasExercisesToday ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}`}>
-              {hasExercisesToday ? 'SẴN SÀNG' : 'NGHỈ'}
+              {hasExercisesToday ? 'SẴN SÀNG' : workoutActionLabel ? (todayDay ? 'ĐÃ LÊN LỊCH' : 'CHƯA CÓ LỊCH') : 'NGHỈ'}
             </div>
           </CardHeader>
           <div className="mt-2">
@@ -337,23 +295,23 @@ export default function Overview() {
               </>
             ) : (
               <>
-                <h3 className="text-2xl font-bold leading-tight text-[var(--color-text-muted)]">Ngày Nghỉ</h3>
+                <h3 className="text-2xl font-bold leading-tight text-[var(--color-text-muted)]">{workoutActionLabel ? 'Chưa có lịch PT' : 'Ngày Nghỉ'}</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-3">Không có lịch tập cho hôm nay</p>
               </>
             )}
           </div>
           <div className="mt-8">
             <button
-              onClick={handleStartWorkout}
-              disabled={!hasExercisesToday}
+              onClick={onOpenWorkout}
+              disabled={!canOpenWorkout}
               className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-colors ${
-                hasExercisesToday
+                canOpenWorkout
                   ? 'bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-dark)]'
                   : 'bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-not-allowed'
               }`}
             >
-              <Play className={`w-4 h-4 ${hasExercisesToday ? 'fill-black' : ''}`} />
-              {hasExercisesToday ? 'Bắt Đầu' : 'Không Có Lịch'}
+              <Play className={`w-4 h-4 ${canOpenWorkout ? 'fill-black' : ''}`} />
+              {workoutActionLabel ? 'Ghi buổi tập hôm nay' : hasExercisesToday ? 'Bắt Đầu' : 'Không Có Lịch'}
             </button>
           </div>
         </Card>
@@ -375,7 +333,7 @@ export default function Overview() {
               </div>
             </div>
             <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--color-text-muted)] tracking-widest uppercase">
-              {hasExercisesToday ? 'CHỜ DO THỰC HIỆN' : 'NGÀY NGHỈ'}
+              {hasExercisesToday ? 'CHỜ DO THỰC HIỆN' : workoutActionLabel ? 'CHƯA CÓ BÀI' : 'NGÀY NGHỈ'}
             </div>
           </div>
 
@@ -386,13 +344,13 @@ export default function Overview() {
                 <p className="text-sm font-semibold text-[var(--color-text-muted)]">
                   {todayDay ? 'Chưa có bài tập nào trong lịch hôm nay' : 'Chưa có lịch tập hôm nay'}
                 </p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1 opacity-60">
+                {!workoutActionLabel && <p className="text-xs text-[var(--color-text-muted)] mt-1 opacity-60">
                   Thêm bài tập trong <span className="text-[var(--color-primary)]">Tập Luyện → Lịch Trình</span>
-                </p>
+                </p>}
               </div>
             ) : (
               todayExerciseDefs.map(({ we, exercise }, idx) => {
-                const pr = exercise ? prMap.get(exercise.id) : undefined;
+                const pr = exercise ? prMap?.get(exercise.id) : undefined;
                 const idxLabel = String(idx + 1).padStart(2, '0');
                 return (
                   <div key={we.id} className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl p-4 flex items-center gap-4 hover:border-[var(--color-card-hover)] transition-colors group">
@@ -430,7 +388,15 @@ export default function Overview() {
             )}
           </div>
 
-          {hasExercisesToday && (
+          {workoutDetails && <Card>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {workoutDetails.map(({ label, value }) => <div key={label}>
+                <dt className="text-sm text-[var(--color-text-muted)]">{label}</dt>
+                <dd className="mt-1 font-medium">{value}</dd>
+              </div>)}
+            </dl>
+          </Card>}
+          {hasExercisesToday && !workoutActionLabel && (
             <div className="bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl p-4 mt-2 flex items-start gap-3">
               <div className="mt-0.5"><Activity className="w-4 h-4 text-[var(--color-primary)]" /></div>
               <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
@@ -450,7 +416,7 @@ export default function Overview() {
                 <CardTitle className="text-sm text-white">Mục Tiêu<br/>Vĩ Mô</CardTitle>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold">{adherence.actual.toLocaleString()} <span className="text-[var(--color-text-muted)]">/ {user.target_calories.toLocaleString()}</span></div>
+                <div className="text-sm font-semibold">{adherence.actual?.toLocaleString() ?? '—'} <span className="text-[var(--color-text-muted)]">/ {user.target_calories?.toLocaleString() ?? '—'}</span></div>
                 <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">KCAL</div>
               </div>
             </CardHeader>
@@ -461,25 +427,26 @@ export default function Overview() {
                 { label: 'TINH BỘT', current: todayMacros.carb, target: user.target_carbs, color: '#60a5fa' },
                 { label: 'CHẤT BÉO', current: todayMacros.fat, target: user.target_fat, color: '#fb923c' },
               ].map((macro) => {
-                const percent = macro.target > 0 ? Math.min(100, Math.round((macro.current / macro.target) * 100)) : 0;
+                const percent = macro.target !== null && macro.target > 0 && macro.current !== null
+                  ? Math.min(100, Math.round((macro.current / macro.target) * 100)) : null;
                 return (
                   <div key={macro.label} className="flex flex-col items-center">
                     <div 
-                      role="progressbar" 
+                      role={percent === null ? undefined : 'progressbar'}
                       aria-label={`Tiến độ ${macro.label}`} 
                       aria-valuemin={0} 
                       aria-valuemax={100} 
-                      aria-valuenow={percent} 
+                      aria-valuenow={percent ?? undefined}
                       className="relative w-16 h-16 flex items-center justify-center mb-3"
                     >
                       <svg aria-hidden="true" className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="42" fill="transparent" stroke="var(--color-app-bg)" strokeWidth="8" />
-                        <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="8" strokeDasharray="263.89" strokeDashoffset={263.89 * (1 - percent / 100)} className="transition-all duration-1000 ease-out" />
+                        <circle cx="50" cy="50" r="42" fill="transparent" stroke={macro.color} strokeWidth="8" strokeDasharray="263.89" strokeDashoffset={263.89 * (1 - (percent ?? 0) / 100)} className="transition-all duration-1000 ease-out" />
                       </svg>
-                      <span className="absolute text-xs font-bold">{percent}%</span>
+                      <span className="absolute text-xs font-bold">{percent === null ? '—' : `${percent}%`}</span>
                     </div>
                     <div className="text-[10px] font-semibold tracking-widest text-[var(--color-text-muted)] mb-1">{macro.label}</div>
-                    <div className="text-[10px] font-bold"><span style={{ color: macro.color }}>{macro.current}</span> / <span className="text-[var(--color-text-muted)]">{macro.target}g</span></div>
+                    <div className="text-[10px] font-bold"><span style={{ color: macro.color }}>{macro.current ?? '—'}</span> / <span className="text-[var(--color-text-muted)]">{macro.target ?? '—'}g</span></div>
                   </div>
                 );
               })}
@@ -490,7 +457,7 @@ export default function Overview() {
               <div className="flex justify-between items-center mb-3 text-xs">
                 <span className="text-[var(--color-text-muted)] uppercase tracking-widest font-semibold">PHÂN BỔ BỮA ĂN</span>
                 <span className="text-[var(--color-primary)] font-semibold">
-                  {consumedMealCount} / {meals.length} Cữ Điểm
+                  {mealCalories.length > 0 && `${consumedMealCount} / ${mealCalories.length} Cữ Điểm`}
                 </span>
               </div>
               {/* Dynamic meal bars proportional to logged calories */}
@@ -526,7 +493,9 @@ export default function Overview() {
                 </>
               )}
               {mealCalories.length === 0 && (
-                <p className="text-xs text-[var(--color-text-muted)] text-center py-2">Chưa có bữa ăn nào</p>
+                <p className="text-xs text-[var(--color-text-muted)] text-center py-2">
+                  {workoutActionLabel && adherence.actual !== null ? 'Chưa có dữ liệu phân bổ theo bữa' : 'Chưa có bữa ăn nào'}
+                </p>
               )}
             </div>
           </Card>

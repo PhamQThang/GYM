@@ -1,6 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { toLocalDateKey } from './analytics';
 import { useAppStore } from './store';
+import { SEED_EXERCISES, SEED_FOODS } from './seed';
+
+vi.hoisted(() => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+    clear: () => values.clear(),
+  });
+  vi.stubGlobal('window', { localStorage: globalThis.localStorage });
+});
 
 
 // Mock crypto.randomUUID for Vitest/jsdom environment if it doesn't exist
@@ -19,6 +31,7 @@ describe('useAppStore mutations', () => {
   });
 
   beforeEach(() => {
+    useAppStore.setState(useAppStore.getInitialState(), true);
     // Reset store before each test
     useAppStore.setState({
       activeSession: null,
@@ -192,5 +205,207 @@ describe('useAppStore mutations', () => {
       useAppStore.getState().updateUser({ soundEnabled: true });
       expect(useAppStore.getState().user.soundEnabled).toBe(true);
     });
+  });
+});
+
+describe('persistence and migration regressions', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useAppStore.setState(useAppStore.getInitialState(), true);
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('starts a workout for the current user and resets an active workout completely', () => {
+    useAppStore.getState().updateUser({ id: 'different-user' });
+    useAppStore.getState().startWorkout('day-push');
+    expect(useAppStore.getState().activeSession?.user_id).toBe('different-user');
+    useAppStore.getState().addSet('we-push-1');
+    useAppStore.getState().startRestTimer(120);
+    useAppStore.getState().resetApp();
+    expect(useAppStore.getState()).toMatchObject({
+      activeSession: null, activeSets: [], restTimerActive: false,
+      restTimerEndsAt: null, restTimerSeconds: 90,
+    });
+  });
+
+  it('ignores imported action names and inherited data properties', () => {
+    const reset = useAppStore.getState().resetApp;
+    const candidate = JSON.parse('{"resetApp":null,"saveWorkout":"injected","waterLogs":{"2026-11-25":500}}');
+    useAppStore.getState().importState(candidate);
+    expect(useAppStore.getState().resetApp).toBe(reset);
+    expect(typeof useAppStore.getState().saveWorkout).toBe('function');
+    expect(useAppStore.getState().waterLogs).toEqual({ '2026-11-25': 500 });
+    useAppStore.getState().importState(Object.create({ waterLogs: {} }));
+    expect(useAppStore.getState().waterLogs).toEqual({ '2026-11-25': 500 });
+  });
+
+  it('persists food customizations, active draft and saved history through hydration', async () => {
+    const food = { ...SEED_FOODS[0]!, name: 'My recipe', is_modified: true };
+    useAppStore.setState({ foods: [food] });
+    useAppStore.getState().startWorkout('day-push');
+    useAppStore.getState().addSet('we-push-1');
+    const set = useAppStore.getState().activeSets[0]!;
+    useAppStore.getState().updateSet(set.id, 40, 10);
+    useAppStore.getState().completeSet(set.id);
+    useAppStore.getState().endWorkout();
+    useAppStore.getState().saveWorkout();
+    const history = structuredClone(useAppStore.getState().workoutHistory);
+    useAppStore.getState().startWorkout('day-pull');
+    useAppStore.getState().addSet('we-pull-1');
+    const draft = structuredClone(useAppStore.getState().activeSession);
+    const sets = structuredClone(useAppStore.getState().activeSets);
+    const saved = localStorage.getItem('pulse-kinetic-storage')!;
+    useAppStore.getState().resetApp();
+    localStorage.setItem('pulse-kinetic-storage', saved);
+    await useAppStore.persist.rehydrate();
+    expect(useAppStore.getState().foods.find(item => item.id === food.id)).toEqual(food);
+    expect(useAppStore.getState().workoutHistory).toEqual(history);
+    expect(useAppStore.getState().setHistory[0]).toMatchObject({ weight: 40, reps: 10 });
+    expect(useAppStore.getState().activeSession).toEqual(draft);
+    expect(useAppStore.getState().activeSets).toEqual(sets);
+  });
+
+  it.each([0, 1, 2, 3])('upgrades v%s without losing custom metadata or historical data', async version => {
+    const seed = SEED_EXERCISES[0]!;
+    const custom = { ...seed, id: 'custom-exercise', name: 'Custom', is_system: false, is_modified: true };
+    const legacy = { ...seed, name: 'Edited before metadata existed' } as Partial<typeof seed>;
+    delete legacy.is_system;
+    delete legacy.is_modified;
+    const raw = {
+      user: { id: 'u-1', current_weight: 65 },
+      exercises: [custom, legacy, { ...SEED_EXERCISES[1]!, is_system: true, is_modified: false }],
+      meals: [{ id: 'old-meal', user_id: 'u-1', name: 'Lunch', scheduled_time: '12:00', description: '', status: 'CONSUMED' }],
+      workoutHistory: [{ id: 'historical-session' }], dailyWater: 250,
+    };
+    const original = structuredClone(raw);
+    const migrated = await useAppStore.persist.getOptions().migrate!(raw, version);
+    expect(migrated.exercises?.[0]).toEqual(custom);
+    expect(migrated.exercises?.[1]).toMatchObject({ name: legacy.name, is_system: true, is_modified: true });
+    expect(migrated.exercises?.[2]).toMatchObject({ is_system: true, is_modified: false });
+    expect(migrated.foods).toEqual(SEED_FOODS);
+    expect(migrated.workoutHistory).toEqual(raw.workoutHistory);
+    if (version < 2) expect(migrated.meals?.[0]).toMatchObject({ template_id: 'mt-old-meal', date: toLocalDateKey(new Date()) });
+    if (version < 3) expect(migrated.waterLogs?.[toLocalDateKey(new Date())]).toBe(250);
+    expect(raw).toEqual(original);
+  });
+
+  it.each([0, 1, 2, 3])('hydrates a v%s snapshot, writes v4 and preserves custom collections', async version => {
+    const partialize = useAppStore.persist.getOptions().partialize!;
+    const data = partialize(useAppStore.getState());
+    const customExercise = { ...SEED_EXERCISES[0]!, id: 'custom-one', name: 'Personal exercise', is_system: false, is_modified: true };
+    const customFood = { ...SEED_FOODS[0]!, id: 'custom-food', name: 'Personal meal', is_system: false, is_modified: true };
+    data.exercises = [customExercise];
+    data.foods = [customFood];
+    const reset = useAppStore.getState().resetApp;
+    localStorage.setItem('pulse-kinetic-storage', JSON.stringify({
+      version, state: { ...data, resetApp: 'malicious action override' },
+    }));
+    await useAppStore.persist.rehydrate();
+    expect(useAppStore.getState().exercises).toContainEqual(customExercise);
+    expect(useAppStore.getState().foods).toContainEqual(customFood);
+    expect(useAppStore.getState().resetApp).toBe(reset);
+    expect(JSON.parse(localStorage.getItem('pulse-kinetic-storage')!).version).toBe(4);
+  });
+
+  it('does not overwrite existing daily water when migrating the legacy aggregate', async () => {
+    const today = toLocalDateKey(new Date());
+    const migrated = await useAppStore.persist.getOptions().migrate!({
+      dailyWater: 500, waterLogs: { [today]: 750, '2026-01-01': 100 },
+    }, 2);
+    expect(migrated.waterLogs).toEqual({ [today]: 750, '2026-01-01': 100 });
+  });
+
+  it('reconciles Vietnam day boundaries on reload and while ensuring new meals, preserving edits', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-25T16:59:00Z'));
+    const meal = { ...useAppStore.getState().meals[0]!, date: '2026-11-25', status: 'PLANNED' as const };
+    const customized = { ...SEED_EXERCISES[0]!, name: 'My bench', is_modified: true };
+    useAppStore.setState({ meals: [meal], mealItems: [], exercises: [customized], waterLogs: {} });
+    vi.setSystemTime(new Date('2026-11-25T17:01:00Z'));
+    await useAppStore.persist.rehydrate();
+    expect(useAppStore.getState().meals[0]?.status).toBe('MISSED');
+    expect(useAppStore.getState().exercises.find(item => item.id === customized.id)?.name).toBe('My bench');
+    useAppStore.getState().ensureMealsForDate('2026-11-26');
+    const count = useAppStore.getState().meals.length;
+    useAppStore.getState().ensureMealsForDate('2026-11-26');
+    expect(useAppStore.getState().meals).toHaveLength(count);
+    expect(useAppStore.getState().mealItems).toEqual([]);
+    expect(useAppStore.getState().waterLogs).toEqual({});
+    vi.setSystemTime(new Date('2026-11-26T17:01:00Z'));
+    useAppStore.getState().ensureMealsForDate('2026-11-27');
+    expect(useAppStore.getState().meals.filter(item => item.date === '2026-11-26').every(item => item.status === 'MISSED')).toBe(true);
+  });
+});
+
+describe('workout input consistency', () => {
+  beforeEach(() => useAppStore.setState(useAppStore.getInitialState(), true));
+
+  it.each([[40, 8.5], [40, -1], [Infinity, 8], [-1, 8], [40, NaN]])(
+    'does not persist invalid weight %s / reps %s', (weight, reps) => {
+      useAppStore.getState().startWorkout('day-push');
+      useAppStore.getState().addSet('we-push-1');
+      const original = useAppStore.getState().activeSets[0]!;
+      useAppStore.getState().updateSet(original.id, weight, reps);
+      expect(useAppStore.getState().activeSets[0]).toEqual(original);
+      const saved = JSON.parse(localStorage.getItem('pulse-kinetic-storage')!);
+      expect(saved.state.activeSets[0]).toEqual(original);
+    },
+  );
+
+  it('accepts zero reps and fractional nonnegative weight without rounding', () => {
+    useAppStore.getState().startWorkout('day-push');
+    useAppStore.getState().addSet('we-push-1');
+    const id = useAppStore.getState().activeSets[0]!.id;
+    useAppStore.getState().updateSet(id, 1.25, 0);
+    expect(useAppStore.getState().activeSets[0]).toMatchObject({ weight: 1.25, reps: 0 });
+  });
+
+  it.each([
+    { planned_sets: 0 }, { planned_sets: 2.5 }, { rep_range_min: -1 },
+    { rep_range_max: 8.5 }, { rep_range_min: 11, rep_range_max: 10 },
+    { rest_seconds: -1 }, { rest_seconds: Infinity },
+  ])('rejects invalid program settings %j without changing saved configuration', update => {
+    const original = useAppStore.getState().workoutExercises.find(item => item.id === 'we-push-1');
+    useAppStore.getState().updateWorkoutExercise('we-push-1', update);
+    expect(useAppStore.getState().workoutExercises.find(item => item.id === 'we-push-1')).toEqual(original);
+  });
+
+  it('adds a zero-rest plan without replacing valid zero values with defaults', () => {
+    useAppStore.getState().addExerciseToDay('day-push', {
+      exercise_id: 'ex-bench', planned_sets: 1, rep_range_min: 0, rep_range_max: 0, rest_seconds: 0,
+    });
+    expect(useAppStore.getState().workoutExercises.at(-1)).toMatchObject({
+      planned_sets: 1, rep_range_min: 0, rep_range_max: 0, rest_seconds: 0,
+    });
+    const count = useAppStore.getState().workoutExercises.length;
+    useAppStore.getState().addExerciseToDay('day-push', { exercise_id: 'ex-bench', planned_sets: 0 });
+    expect(useAppStore.getState().workoutExercises).toHaveLength(count);
+  });
+
+  it('cannot start a timer or complete a set while reviewing a workout', () => {
+    useAppStore.getState().startWorkout('day-push');
+    useAppStore.getState().addSet('we-push-1');
+    const id = useAppStore.getState().activeSets[0]!.id;
+    useAppStore.getState().endWorkout();
+    useAppStore.getState().completeSet(id);
+    useAppStore.getState().startRestTimer(90);
+    expect(useAppStore.getState().activeSets[0]?.status).toBe('PLANNED');
+    expect(useAppStore.getState().restTimerActive).toBe(false);
+    expect(useAppStore.getState().restTimerEndsAt).toBeNull();
+  });
+
+  it('rejects invalid timer durations and treats zero rest as no timer', () => {
+    useAppStore.getState().startRestTimer(90);
+    expect(useAppStore.getState().restTimerActive).toBe(false);
+    useAppStore.getState().startWorkout('day-push');
+    for (const seconds of [-1, Infinity, NaN, Number.MAX_VALUE]) {
+      useAppStore.getState().startRestTimer(seconds);
+      expect(useAppStore.getState().restTimerActive).toBe(false);
+    }
+    useAppStore.getState().startRestTimer(30);
+    expect(useAppStore.getState().restTimerActive).toBe(true);
+    useAppStore.getState().startRestTimer(0);
+    expect(useAppStore.getState()).toMatchObject({ restTimerActive: false, restTimerEndsAt: null, restTimerSeconds: 0 });
   });
 });

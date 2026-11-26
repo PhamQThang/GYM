@@ -1,14 +1,10 @@
 import { ArrowLeft, Dumbbell, Timer, TrendingUp, Trophy, Check, History } from 'lucide-react';
-import { WorkoutSession, WorkoutSet, WorkoutDay, WorkoutExercise, Exercise } from '../../../lib/types';
+import type { WorkoutSession, WorkoutSet, WorkoutHistoryData } from '../../../lib/types';
 import { durationMinutes, formatVietnamDate, derivePRsInSession } from '../../../lib/analytics';
 import { Card } from '../../ui/Card';
 
-interface WorkoutDetailProps {
+interface WorkoutDetailProps extends Omit<WorkoutHistoryData, 'workoutHistory'> {
   session: WorkoutSession;
-  setHistory: WorkoutSet[];
-  workoutDays: WorkoutDay[];
-  workoutExercises: WorkoutExercise[];
-  exercises: Exercise[];
   onBack: () => void;
 }
 
@@ -55,6 +51,7 @@ export default function WorkoutDetail({
         </div>
         <h2 className="text-3xl font-bold mb-1">{day?.name ?? 'Buổi Tập'}</h2>
         <p className="text-sm text-[var(--color-text-muted)]">{formatVietnamDate(session.start_time)}</p>
+        {session.note && <p className="mt-3 whitespace-pre-wrap break-words">{session.note}</p>}
       </div>
 
       {/* Top stats */}
