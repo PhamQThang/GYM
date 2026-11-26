@@ -24,7 +24,7 @@ async function account(label) {
   users.push(user.id);
   const api = makeClient();
   unwrap(await api.auth.signInWithPassword({ email, password }));
-  return { id: user.id, email, api };
+  return { id: user.id, email, password, api };
 }
 try {
   const pt = await account('pt');
@@ -54,11 +54,41 @@ try {
   assert.ok((await accept(next.token)).error);
   assert.deepEqual(unwrap(await learner.api.from('clients').select('id')), [{ id: clientId }]);
 
+  const exercise = unwrap(await learner.api.from('exercises').select('id').eq('is_active', true).limit(1).single());
+  const workout = {
+    p_workout_id: randomUUID(),
+    p_client_id: clientId,
+    p_recorded_at: new Date().toISOString(),
+    p_note: 'Local smoke workout',
+    p_sets: [{ exercise_id: exercise.id, weight_kg: 0, reps: 8 }, { exercise_id: exercise.id, weight_kg: 30.5, reps: 5 }],
+  };
+  assert.ok((await other.api.rpc('save_client_workout', workout)).error);
+  const invalid = { ...workout, p_sets: [...workout.p_sets, { exercise_id: exercise.id, weight_kg: -1, reps: 2 }] };
+  assert.ok((await learner.api.rpc('save_client_workout', invalid)).error);
+  assert.deepEqual(unwrap(await learner.api.from('workout_logs').select('id').eq('client_id', clientId)), []);
+  const saves = await Promise.all([
+    learner.api.rpc('save_client_workout', workout),
+    learner.api.rpc('save_client_workout', workout),
+  ]);
+  assert.deepEqual(saves.map(unwrap), [workout.p_workout_id, workout.p_workout_id]);
+
+  const secondSession = makeClient();
+  unwrap(await secondSession.auth.signInWithPassword({ email: learner.email, password: learner.password }));
+  const readWorkout = api => api.from('workout_logs').select('id,note,workout_sets(weight_kg,reps)')
+    .eq('client_id', clientId).order('set_number', { referencedTable: 'workout_sets' });
+  const expected = [{
+    id: workout.p_workout_id, note: workout.p_note,
+    workout_sets: [{ weight_kg: 0, reps: 8 }, { weight_kg: 30.5, reps: 5 }],
+  }];
+  assert.deepEqual(unwrap(await readWorkout(secondSession)), expected);
+  assert.deepEqual(unwrap(await readWorkout(pt.api)), expected);
+  assert.deepEqual(unwrap(await readWorkout(other.api)), []);
   unwrap(await learner.api.auth.signOut());
   assert.equal(unwrap(await learner.api.auth.getSession()).session, null);
-  console.log('Local invitation and profile isolation passed.');
+  console.log('Local invitation, profile isolation, atomic workout save and fresh-session read passed.');
 } finally {
   if (clientIds.length) {
+    unwrap(await admin.from('workout_logs').delete().in('client_id', clientIds));
     unwrap(await admin.from('client_invitations').delete().in('client_id', clientIds));
     unwrap(await admin.from('clients').delete().in('id', clientIds));
   }

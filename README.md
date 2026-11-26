@@ -60,7 +60,7 @@ The supported runtime range is declared in `package.json`; npm and
 
 ## Known Limitations
 
-- The default build runs the local tracker. The Supabase mode supports PT/client sign-in, creating student profiles, verified invitations, and a read-only overview for linked students. Cloud workout and nutrition logging are pending.
+- The default build runs the local tracker. The Supabase mode supports PT/client sign-in, creating student profiles, verified invitations, and recording and viewing the latest workout for a linked student. Assigned-program workout logging and cloud nutrition logging are pending.
 - Features like social progress sharing or server-managed routine discovering are out-of-scope for the early phase MVP.
 
 ## Local data and P0 development
@@ -73,6 +73,7 @@ The supported runtime range is declared in `package.json`; npm and
   custom food definitions absent from the original export cannot be reconstructed.
   Missing legacy catalog metadata is recovered conservatively with a warning.
 - Migration 003 hardens profile and program permissions. Migration 004 adds verified invitations and keeps existing account links.
+- Apply migration 005 after 004 on any Supabase project serving cloud workout logging. It adds the RPC that saves a workout and its sets in one transaction.
 - CI includes PostgreSQL permission regression tests using minimal Auth/Storage
   stubs. These do not replace Supabase Auth, API and storage integration tests.
 
@@ -82,7 +83,7 @@ To run the Supabase mode against a separate local stack on Windows, start Docker
 powershell -NoProfile -File scripts/start-local-auth.ps1
 ```
 
-Add `-SmokeTest` to verify invitation acceptance and account isolation with disposable accounts.
+Add `-SmokeTest` to verify invitation acceptance, account isolation and workout persistence across sessions with disposable accounts.
 The script uses a loopback API and applies the repository migrations to its local stack.
 The account overview reads the assigned program, workout history summary, nutrition
 targets, latest weight, active package and upcoming PT session from Supabase.
@@ -95,6 +96,9 @@ the local web app connected to the hosted database. Add the equivalent URL for
 any deployed app. The **Tiếp tục với Google** button opens Google's account
 chooser. When started from the invitation page, Google sign-in returns learners
 to that invitation in the same tab to confirm acceptance.
+
+See [P0 implementation report](docs/P0_IMPLEMENTATION_REPORT.md) and
+[database audit](docs/P0_DATABASE_AUDIT.md) for validation and remaining work.
 
 ## Roadmap
 

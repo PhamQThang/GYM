@@ -20,8 +20,10 @@ export async function readClientOverview(api: SupabaseClient<Database>, scope: C
   const [program, workout, nutrition, measurement, packages, calendar] = await Promise.all([
     api.from('programs').select('name').eq('client_id', clientId).eq('is_active', true)
       .order('updated_at', { ascending: false }).order('id').limit(1).abortSignal(signal).maybeSingle(),
-    api.from('workout_logs').select('started_at').eq('client_id', clientId)
-      .order('started_at', { ascending: false }).order('id').limit(1).abortSignal(signal).maybeSingle(),
+    api.from('workout_logs').select('started_at,note,workout_sets(id,set_number,weight_kg,reps,status,exercises(name))').eq('client_id', clientId)
+      .order('started_at', { ascending: false }).order('id').limit(1)
+      .order('set_number', { referencedTable: 'workout_sets' }).order('id', { referencedTable: 'workout_sets' })
+      .abortSignal(signal).maybeSingle(),
     api.from('nutrition_profiles').select('target_kcal,protein_g,carbs_g,fat_g').eq('client_id', clientId)
       .abortSignal(signal).maybeSingle(),
     api.from('body_metrics').select('measured_on,weight_kg').eq('client_id', clientId).not('weight_kg', 'is', null)
@@ -37,7 +39,7 @@ export async function readClientOverview(api: SupabaseClient<Database>, scope: C
   return {
     name: client.full_name,
     program: read(program)?.name ?? null,
-    lastWorkoutAt: read(workout)?.started_at ?? null,
+    lastWorkout: read(workout),
     nutrition: target ? { calories: target.target_kcal, protein: target.protein_g, carbs: target.carbs_g, fat: target.fat_g } : null,
     weight: weight?.weight_kg == null ? null : { kg: weight.weight_kg, date: weight.measured_on },
     packageName: read(packages)?.name ?? null,

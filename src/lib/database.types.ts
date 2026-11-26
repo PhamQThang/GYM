@@ -1328,6 +1328,16 @@ export type Database = {
         Args: { p_invitation_id: string };
         Returns: undefined;
       };
+      save_client_workout: {
+        Args: {
+          p_client_id: string;
+          p_note: string;
+          p_recorded_at: string;
+          p_sets: Json;
+          p_workout_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       client_status: 'active' | 'paused' | 'inactive';
