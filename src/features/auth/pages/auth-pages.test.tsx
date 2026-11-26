@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { CloudRoutes } from '../../../CloudApp';
+import { WORKOUT_TABS } from '../../../lib/navigation';
 import { AuthContext } from '../auth-context';
 import type { AuthContextValue, AuthState } from '../auth-types';
 import { LoginPage, ResetPasswordPage, InvitePage, AccountStatusPage } from './index';
@@ -75,6 +76,15 @@ describe('auth page guards and safe messages', () => {
     vi.stubGlobal('window', { location: { hash: '#token=invalid' } });
     expect(render(<InvitePage />)).not.toContain('Tạo tài khoản học viên');
     expect(render(<LoginPage />)).not.toContain('Tạo tài khoản học viên');
+  });
+  it.each(WORKOUT_TABS)('renders the shared $label tab inside the online workout workspace', ({ path, label }) => {
+    const markup = render(<CloudRoutes />, {
+      status: 'ready', profile: { id: 'learner', full_name: 'Learner', role: 'client' },
+      clientId: 'linked-client', session: { user: { id: 'learner' } } as Session,
+    }, '/client' + path);
+    expect(markup).toContain('Menu tập luyện');
+    expect(markup).toMatch(new RegExp('aria-current="page"[^>]*>' + label + '</a>'));
+    for (const tab of WORKOUT_TABS) expect(markup).toContain('href="/client' + tab.path + '"');
   });
   it('does not render raw backend errors', () => {
     const markup = render(<AccountStatusPage />, { status: 'error', error: 'https://secret.test?token=private-token' });

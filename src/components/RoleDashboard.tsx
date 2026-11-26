@@ -25,7 +25,7 @@ export function RoleDashboard({ profile }: { profile: AuthProfile }) {
       : 'px-4'}>
       <ul className={mobile ? `grid gap-1 py-1 ${trainer ? 'grid-cols-3' : 'grid-cols-6'}` : 'space-y-1'}>
         {items.map(({ to, label, Icon }) => <li key={to}>
-          <NavLink to={to} end className={({ isActive }) => cn(
+          <NavLink to={to} end={to !== '/client/workout'} className={({ isActive }) => cn(
             'flex min-h-12 items-center rounded-xl border border-transparent font-medium hover:bg-[var(--color-card-bg)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]',
             mobile ? 'flex-col justify-center gap-0.5 px-0.5 text-center text-[9px] sm:text-xs' : 'gap-3 px-4 text-sm',
             isActive ? 'border-[var(--color-border)] bg-[var(--color-card-bg)] text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]',

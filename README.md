@@ -60,7 +60,9 @@ The supported runtime range is declared in `package.json`; npm and
 
 ## Known Limitations
 
-- The default build runs the local tracker. The Supabase mode supports PT/client sign-in, creating student profiles, verified invitations, and recording and viewing the latest workout for a linked student. Assigned-program workout logging and cloud nutrition logging are pending.
+- The web app uses Supabase for PT/client sign-in, verified invitations, assigned-program views and workout history. Learners can start a workout from an assigned day or log one without a program.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the Vercel environment for the deployment. A legacy Supabase project can use `VITE_SUPABASE_ANON_KEY` in place of the publishable key. The Vercel build stops if either required setting is absent.
+- Learners can view their assigned program, exercise catalog and nutrition records. Workout and weight logging write to Supabase. Editing programs and logging meals in the learner portal are pending.
 - Features like social progress sharing or server-managed routine discovering are out-of-scope for the early phase MVP.
 
 ## Local data and P0 development
@@ -77,7 +79,7 @@ The supported runtime range is declared in `package.json`; npm and
 - CI includes PostgreSQL permission regression tests using minimal Auth/Storage
   stubs. These do not replace Supabase Auth, API and storage integration tests.
 
-To run the Supabase mode against a separate local stack on Windows, start Docker and run:
+To test the online app against a disposable Supabase stack on Windows, start Docker and run:
 
 ```powershell
 powershell -NoProfile -File scripts/start-local-auth.ps1

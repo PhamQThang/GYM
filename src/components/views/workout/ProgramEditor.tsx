@@ -1,27 +1,33 @@
 import { useState } from 'react';
-import { useAppStore } from '../../../lib/store';
 import { Plus, Settings2, Trash2, ChevronDown, ChevronUp, Check, FolderPlus, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { isValidWorkoutPlan } from '../../../lib/workout-validation';
-import type { WorkoutExercise } from '../../../lib/types';
+import type { Exercise, WorkoutDay, WorkoutExercise, WorkoutProgram } from '../../../lib/types';
 
-export default function ProgramEditor() {
-  const programs = useAppStore((s) => s.programs);
-  const workoutDays = useAppStore((s) => s.workoutDays);
-  const workoutExercises = useAppStore((s) => s.workoutExercises);
-  const exercises = useAppStore((s) => s.exercises);
-  const addWorkoutDay = useAppStore((s) => s.addWorkoutDay);
-  const removeExerciseFromDay = useAppStore((s) => s.removeExerciseFromDay);
-  const updateWorkoutExercise = useAppStore((s) => s.updateWorkoutExercise);
-  const reorderExercises = useAppStore((s) => s.reorderExercises);
-  const program = programs[0];
+type DayExercise = Pick<WorkoutExercise, 'id' | 'workout_day_id' | 'exercise_id' | 'order_index' | 'planned_sets' | 'rep_range_min' | 'rep_range_max' | 'rest_seconds' | 'is_active'>;
+type ExerciseEntry = Pick<Exercise, 'id' | 'name' | 'primary_muscle' | 'is_active' | 'is_custom'>;
+type ProgramActions = {
+  addDay: () => void;
+  addExercise: (dayId: string, exerciseId: string) => void;
+  removeExercise: (id: string) => void;
+  updateExercise: (id: string, values: Partial<WorkoutExercise>) => void;
+  reorder: (dayId: string, ids: string[]) => void;
+};
+
+export default function ProgramEditor({ program, workoutDays, workoutExercises, exercises, actions }: {
+  program?: Pick<WorkoutProgram, 'id' | 'name' | 'phase'>;
+  workoutDays: Pick<WorkoutDay, 'id' | 'program_id' | 'name' | 'focus' | 'is_active'>[];
+  workoutExercises: DayExercise[];
+  exercises: ExerciseEntry[];
+  actions?: ProgramActions;
+}) {
   const pDays = workoutDays.filter(d => d.program_id === program?.id && d.is_active !== false);
 
   const [expandedDay, setExpandedDay] = useState<string | null>(pDays[0]?.id || null);
   const [editingExId, setEditingExId] = useState<string | null>(null);
   const [draft, setDraft] = useState({ planned_sets: '', rep_range_min: '', rep_range_max: '', rest_seconds: '' });
   const [editError, setEditError] = useState('');
-  const beginEdit = (exercise: WorkoutExercise) => {
+  const beginEdit = (exercise: DayExercise) => {
     setEditingExId(exercise.id);
     setDraft({ planned_sets: String(exercise.planned_sets), rep_range_min: String(exercise.rep_range_min),
       rep_range_max: String(exercise.rep_range_max), rest_seconds: String(exercise.rest_seconds) });
@@ -34,7 +40,7 @@ export default function ProgramEditor() {
       setEditError('Số hiệp phải là số nguyên dương; reps là số nguyên không âm, nhỏ nhất không vượt lớn nhất; thời gian nghỉ không âm.');
       return;
     }
-    updateWorkoutExercise(exerciseId, values);
+    actions?.updateExercise(exerciseId, values);
     setEditingExId(null);
     setEditError('');
   };
@@ -42,7 +48,7 @@ export default function ProgramEditor() {
   // States for adding a new exercise to a day
   const [addPickerDayId, setAddPickerDayId] = useState<string | null>(null);
 
-  if (!program) return <div>No program active</div>;
+  if (!program) return <Card className="text-[var(--color-text-muted)]">Chưa có giáo án đang hoạt động.</Card>;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-20">
@@ -51,13 +57,13 @@ export default function ProgramEditor() {
             <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{program.name}</h2>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">{program.phase}</p>
           </div>
-          <button 
-             onClick={() => addWorkoutDay('Ngày Tập Mới', 'Tổng Hợp')}
+          {actions && <button
+             onClick={actions.addDay}
              className="flex items-center gap-2 bg-[var(--color-app-bg)] border border-[var(--color-border)] hover:bg-[var(--color-card-hover)] px-4 py-2 rounded-xl transition-colors text-sm font-semibold"
           >
              <FolderPlus className="w-4 h-4 text-[var(--color-primary)]" />
              Thêm Ngày
-          </button>
+          </button>}
        </div>
 
        <div className="space-y-4">
@@ -103,7 +109,7 @@ export default function ProgramEditor() {
                            const t2 = arr[index];
                            if (!t1 || !t2) return;
                            [arr[index-1], arr[index]] = [t2, t1];
-                           reorderExercises(day.id, arr.map(a => a.id));
+                           actions?.reorder(day.id, arr.map(a => a.id));
                          };
 
                          const moveDown = () => {
@@ -113,17 +119,17 @@ export default function ProgramEditor() {
                            const t2 = arr[index];
                            if (!t1 || !t2) return;
                            [arr[index+1], arr[index]] = [t2, t1];
-                           reorderExercises(day.id, arr.map(a => a.id));
+                           actions?.reorder(day.id, arr.map(a => a.id));
                          };
 
                          const isEditing = editingExId === we.id;
 
                          return (
                            <div key={we.id} className={`flex items-start gap-4 p-4 rounded-xl border transition-colors ${isEditing ? 'bg-[var(--color-card-bg)] border-[var(--color-primary)]/50 ring-1 ring-[var(--color-primary)]/20' : 'bg-[var(--color-app-bg)] border-[var(--color-border)] hover:border-[var(--color-card-hover)]'}`}>
-                              <div className="flex flex-col gap-1 mt-1 shrink-0">
+                              {actions && <div className="flex flex-col gap-1 mt-1 shrink-0">
                                 <button onClick={moveUp} disabled={index===0} className="p-1 text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 disabled:hover:text-[var(--color-text-muted)] rounded"><ArrowUp className="w-3.5 h-3.5" /></button>
                                 <button onClick={moveDown} disabled={index===dayExercises.length-1} className="p-1 text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 disabled:hover:text-[var(--color-text-muted)] rounded"><ArrowDown className="w-3.5 h-3.5" /></button>
-                              </div>
+                              </div>}
                               
                               <div className="flex-1 min-w-0">
                                 {!isEditing ? (
@@ -169,7 +175,7 @@ export default function ProgramEditor() {
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-2 shrink-0">
+                              {actions && <div className="flex items-center gap-2 shrink-0">
                                  {isEditing ? (
                                     <button aria-label="Lưu bài tập" onClick={() => saveEdit(we.id)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-primary)] text-black"><Check className="w-4 h-4" /></button>
                                  ) : (
@@ -179,14 +185,14 @@ export default function ProgramEditor() {
                                  <button 
                                    onClick={() => {
                                      if(confirm('Bạn có chắc muốn xóa bài tập này khỏi lịch? Dữ liệu lịch sử sẽ không bị ảnh hưởng.')) {
-                                        removeExerciseFromDay(we.id);
+                                        actions.removeExercise(we.id);
                                      }
                                    }}
                                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--color-border)] hover:bg-red-500/20 text-[var(--color-text-muted)] hover:text-red-400"
                                  >
                                     <Trash2 className="w-4 h-4" />
                                  </button>
-                              </div>
+                              </div>}
                            </div>
                          );
                       })}
@@ -195,13 +201,13 @@ export default function ProgramEditor() {
                         <div className="text-center py-6 text-sm text-[var(--color-text-muted)]">Ngày này chưa có bài tập nào.</div>
                       )}
 
-                      <button 
+                      {actions && <button
                         onClick={() => setAddPickerDayId(day.id)}
                         className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)]/50 rounded-xl text-sm font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors mt-4"
                       >
                          <Plus className="w-4 h-4" />
                          Thêm Bài Tập
-                      </button>
+                      </button>}
                    </div>
                  )}
                </Card>
@@ -209,16 +215,19 @@ export default function ProgramEditor() {
           })}
        </div>
 
-       {addPickerDayId && (
-         <AddExerciseToDayModal dayId={addPickerDayId} onClose={() => setAddPickerDayId(null)} />
+       {addPickerDayId && actions && (
+         <AddExerciseToDayModal exercises={exercises} onAdd={id => actions.addExercise(addPickerDayId, id)}
+           onClose={() => setAddPickerDayId(null)} />
        )}
     </div>
   );
 }
 
-function AddExerciseToDayModal({ dayId, onClose }: { dayId: string, onClose: () => void }) {
-  const exercises = useAppStore((s) => s.exercises);
-  const addExerciseToDay = useAppStore((s) => s.addExerciseToDay);
+function AddExerciseToDayModal({ exercises, onAdd, onClose }: {
+  exercises: ExerciseEntry[];
+  onAdd: (id: string) => void;
+  onClose: () => void;
+}) {
   const [search, setSearch] = useState('');
   
   const activeExs = exercises.filter(e => e.is_active !== false && e.name.toLowerCase().includes(search.toLowerCase()));
@@ -235,7 +244,7 @@ function AddExerciseToDayModal({ dayId, onClose }: { dayId: string, onClose: () 
                 <button 
                   key={ex.id}
                   onClick={() => {
-                    addExerciseToDay(dayId, { exercise_id: ex.id });
+                    onAdd(ex.id);
                     onClose();
                   }}
                   className="w-full flex items-center justify-between p-4 rounded-xl bg-[var(--color-panel-bg)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5 transition-colors text-left"

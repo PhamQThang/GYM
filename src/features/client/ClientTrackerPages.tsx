@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Nutrition from '../../components/views/Nutrition';
-import Progress from '../../components/views/Progress';
 import WorkoutHistory from '../../components/views/WorkoutHistory';
 import { toLocalDateKey } from '../../lib/analytics';
 import type { Database } from '../../lib/database.types';
 import type { ClientScope } from '../../lib/repositories/client-overview';
 import { loadClientHistory, loadClientNutrition, loadClientProgress, saveClientWeight } from '../../lib/repositories/client-tracker';
 import { AuthNotice } from '../auth/pages/AuthFrame';
+
+const Progress = lazy(() => import('../../components/views/Progress'));
 
 function useClientPage<T>(
   { userId, clientId }: ClientScope,
@@ -44,10 +45,10 @@ export function ClientHistoryPage(scope: ClientScope) {
 
 export function ClientProgressPage(scope: ClientScope) {
   const { data, status, reload } = useClientPage(scope, loadClientProgress);
-  return data ? <Progress {...data} weightLogs={data.weights} cloudWeightRange onLogWeight={async (weight, submissionId) => {
+  return data ? <Suspense fallback={<p role="status">Đang tải biểu đồ…</p>}><Progress {...data} weightLogs={data.weights} cloudWeightRange onLogWeight={async (weight, submissionId) => {
     await saveClientWeight(scope, weight, submissionId);
     reload();
-  }} /> : status;
+  }} /></Suspense> : status;
 }
 
 function readNutritionDay(api: SupabaseClient<Database>, scope: ClientScope, signal: AbortSignal, day: string) {

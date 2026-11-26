@@ -10,13 +10,13 @@ function newSet(exerciseId = ''): SetDraft {
   return { id: crypto.randomUUID(), exercise_id: exerciseId, weight_kg: '', reps: '' };
 }
 
-export function WorkoutLogForm({ catalog, onRetryCatalog, onClose, onSave }: {
-  catalog: Exercise[] | 'error' | null;
-  onRetryCatalog: () => void;
+export function WorkoutLogForm({ catalog, plannedExerciseIds = [], onClose, onSave }: {
+  catalog: Exercise[];
+  plannedExerciseIds?: string[];
   onClose: () => void;
   onSave: (workout: WorkoutDraft) => Promise<void>;
 }) {
-  const [sets, setSets] = useState<SetDraft[]>(() => [newSet()]);
+  const [sets, setSets] = useState<SetDraft[]>(() => plannedExerciseIds.length ? plannedExerciseIds.slice(0, 100).map(newSet) : [newSet()]);
   const [note, setNote] = useState('');
   const [request, setRequest] = useState<WorkoutDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,13 +46,8 @@ export function WorkoutLogForm({ catalog, onRetryCatalog, onClose, onSave }: {
   }
 
   return <form className="space-y-3" onSubmit={event => void submit(event)} aria-busy={busy}>
-    {catalog === null && <p role="status">Đang tải bài tập…</p>}
-    {catalog === 'error' && <>
-      <AuthNotice error>Chưa tải được danh sách bài tập.</AuthNotice>
-      <button type="button" className={secondaryButtonClass} onClick={onRetryCatalog}>Thử tải lại</button>
-    </>}
-    {catalog?.length === 0 && <AuthNotice>Chưa có bài tập khả dụng.</AuthNotice>}
-    {Array.isArray(catalog) && catalog.length > 0 && <>
+    {catalog.length === 0 && <AuthNotice>Chưa có bài tập khả dụng.</AuthNotice>}
+    {catalog.length > 0 && <>
       <fieldset className="space-y-3" disabled={request !== null}>
         {sets.map((set, index) => <fieldset key={set.id} className="space-y-3 rounded-lg border border-[var(--color-border)] px-3 pb-3">
           <legend className="px-1 text-sm">Hiệp {index + 1}</legend>

@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useAppStore } from '../../../lib/store';
 import { Search, Plus, Dumbbell, Trash2 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Exercise } from '../../../lib/types';
 
-export default function ExerciseLibrary() {
-  const exercises = useAppStore((s) => s.exercises);
-  const addCustomExercise = useAppStore((s) => s.addCustomExercise);
-  const hideExercise = useAppStore((s) => s.hideExercise);
+export default function ExerciseLibrary({ exercises, onAdd, onHide }: {
+  exercises: Pick<Exercise, 'id' | 'name' | 'primary_muscle' | 'equipment' | 'is_active' | 'is_custom'>[];
+  onAdd?: (exercise: Omit<Exercise, 'id'>) => void;
+  onHide?: (id: string) => void;
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Only show active exercises
@@ -32,13 +32,13 @@ export default function ExerciseLibrary() {
                className="w-full bg-[var(--color-panel-bg)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] transition-colors"
              />
           </div>
-          <button 
+          {onAdd && <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 bg-[var(--color-primary)] text-black font-semibold px-4 py-2.5 rounded-xl hover:bg-[var(--color-primary-dark)] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Tạo Bài Tập Mới
-          </button>
+          </button>}
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -57,20 +57,18 @@ export default function ExerciseLibrary() {
                <h4 className="font-bold text-lg mb-1">{ex.name}</h4>
                <p className="text-xs text-[var(--color-text-muted)] mb-4">{ex.primary_muscle} {ex.equipment ? `• ${ex.equipment}` : ''}</p>
                
-               <div className="mt-auto pt-4 border-t border-[var(--color-border)] flex gap-2 justify-end">
-                 {ex.is_custom && (
+               {ex.is_custom && onHide && <div className="mt-auto pt-4 border-t border-[var(--color-border)] flex gap-2 justify-end">
                    <button 
                      onClick={() => {
                         if (confirm('Bạn có chắc muốn xóa bài tập này? Lịch sử tập sẽ không bị mất.')) {
-                           hideExercise(ex.id);
+                           onHide(ex.id);
                         }
                      }}
                      className="w-8 h-8 rounded-lg bg-[var(--color-app-bg)] hover:bg-red-500/20 text-[var(--color-text-muted)] hover:text-red-400 flex items-center justify-center transition-colors"
                    >
                       <Trash2 className="w-4 h-4" />
                    </button>
-                 )}
-               </div>
+               </div>}
             </Card>
           ))}
        </div>
@@ -81,9 +79,9 @@ export default function ExerciseLibrary() {
          </div>
        )}
 
-       {showAddModal && (
+       {showAddModal && onAdd && (
          <AddExerciseModal onClose={() => setShowAddModal(false)} onAdd={(ex) => {
-           addCustomExercise(ex);
+           onAdd(ex);
            setShowAddModal(false);
          }} />
        )}

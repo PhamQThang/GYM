@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '../../ui/Card';
-import { WorkoutPage } from './WorkoutPage';
 
 type SavedWorkout = {
   started_at: string;
@@ -19,14 +18,14 @@ const workoutDate = new Intl.DateTimeFormat('vi-VN', {
   dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh',
 });
 
-export function WorkoutLog({ workout, saved, onRecord, children }: {
+export function WorkoutLog({ workout, saved, title, children }: {
   workout: SavedWorkout | null;
   saved: boolean;
-  onRecord: () => void;
+  title?: string;
   children?: ReactNode;
 }) {
-  return <WorkoutPage>
-    <h1 className="text-3xl font-bold">Tập Luyện</h1>
+  return <section className="space-y-4">
+    {title && <h1 className="text-3xl font-bold">{title}</h1>}
     <div className="grid items-start gap-4 xl:grid-cols-2">
       <Card className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -44,10 +43,10 @@ export function WorkoutLog({ workout, saved, onRecord, children }: {
           </ul>
         </> : <p>Chưa có buổi tập đã lưu.</p>}
       </Card>
-      <Card className="space-y-3">
+      {(saved || children) && <Card className="space-y-3">
         {saved && <p role="status">Đã lưu buổi tập.</p>}
-        {children ?? <button type="button" onClick={onRecord} className="min-h-12 w-full rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-black hover:brightness-110">Ghi buổi tập</button>}
-      </Card>
+        {children}
+      </Card>}
     </div>
-  </WorkoutPage>;
+  </section>;
 }

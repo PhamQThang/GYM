@@ -44,7 +44,6 @@ foreach ($line in $settings) {
 if (!$localValues.API_URL -or !$localValues.ANON_KEY -or !([Uri]$localValues.API_URL).IsLoopback) {
     throw 'Expected a loopback Supabase API and a local anon key.'
 }
-$env:VITE_ENABLE_CLOUD_AUTH = 'true'
 $env:VITE_SUPABASE_URL = $localValues.API_URL
 $env:VITE_SUPABASE_ANON_KEY = $localValues.ANON_KEY
 $env:VITE_SUPABASE_PUBLISHABLE_KEY = $localValues.ANON_KEY
